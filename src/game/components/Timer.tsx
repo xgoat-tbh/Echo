@@ -1,61 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
 import { cn } from '../../lib/cn'
 
 interface TimerProps {
-  durationSeconds: number
-  running?: boolean
-  onExpire?: () => void
-  paused?: boolean
+  value: number
+  max: number
 }
 
-export function Timer({ durationSeconds, running, onExpire, paused }: TimerProps) {
-  const [remaining, setRemaining] = useState(durationSeconds)
-  const intervalRef = useRef<number | null>(null)
-  const expiredRef = useRef(false)
-
-  useEffect(() => {
-    setRemaining(durationSeconds)
-    expiredRef.current = false
-  }, [durationSeconds])
-
-  useEffect(() => {
-    if (!running || paused) {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-      return
-    }
-
-    intervalRef.current = window.setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          if (intervalRef.current !== null) {
-            clearInterval(intervalRef.current)
-            intervalRef.current = null
-          }
-          if (!expiredRef.current) {
-            expiredRef.current = true
-            onExpire?.()
-          }
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-  }, [running, paused, onExpire])
-
-  const minutes = Math.floor(remaining / 60)
-  const seconds = remaining % 60
-  const pct = durationSeconds > 0 ? remaining / durationSeconds : 0
-  const urgent = remaining <= 10
+export function Timer({ value, max }: TimerProps) {
+  const pct = max > 0 ? value / max : 0
+  const minutes = Math.floor(value / 60)
+  const seconds = value % 60
+  const urgent = value <= 10
 
   const radius = 22
   const circumference = 2 * Math.PI * radius

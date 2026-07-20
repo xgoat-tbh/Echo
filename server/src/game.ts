@@ -45,6 +45,7 @@ export interface GameRoom {
   timerInterval: ReturnType<typeof setInterval> | null
   timerValue: number
   echoPlayerIds: string[]
+  matchWordPair: WordPair | null
   spectators: string[]
   customWordPairs: WordPair[]
 }
@@ -74,17 +75,44 @@ function shuffleArray(arr: number[]): number[] {
 
 export function generateRoomCode(): string {
   let code = ''
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     code += CHARS.charAt(Math.floor(Math.random() * CHARS.length))
   }
   if (rooms.has(code)) return generateRoomCode()
   return code
 }
 
+// ─── Rate Limiting ───
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+function checkRateLimit(key: string, maxAttempts: number, windowMs: number): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(key)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs })
+    return true
+  }
+  if (entry.count >= maxAttempts) return false
+  entry.count++
+  return true
+}
+// Cleanup stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(key)
+  }
+}, 300000)
+
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]*>/g, '').replace(/[&<>"]/g, '')
+}
+
 export function getFilteredRoomState(room: GameRoom, playerId: string) {
   const isEnded = room.status === 'REVEAL' || room.status === 'RESULTS'
   const showClues = room.status !== 'LOBBY' && room.status !== 'ASSIGNING'
   const isSpectator = room.spectators.includes(playerId)
+  const player = room.players.find(p => p.id === playerId)
+  const isEcho = player?.isEcho ?? false
 
   return {
     code: room.code,
@@ -93,7 +121,7 @@ export function getFilteredRoomState(room: GameRoom, playerId: string) {
     currentRound: room.currentRound,
     currentSpeakerIndex: room.currentSpeakerIndex,
     clueOrder: (room.status === 'CLUE' || room.status === 'DISCUSSION') ? room.clueOrder : [],
-    publicWord: room.status !== 'LOBBY' ? room.wordPair?.word ?? null : null,
+    publicWord: room.status !== 'LOBBY' && (isEnded || !isEcho) ? room.wordPair?.word ?? null : null,
     echoWord: (isEnded || isSpectator) ? room.wordPair?.echo ?? null : null,
     revealedEchoId: room.revealedEchoId,
     winnerId: room.winnerId,
@@ -172,10 +200,15 @@ function getActivePlayers(room: GameRoom): Player[] {
 // --- Event Handlers ---
 
 export function handleCreateRoom(socket: Socket, nickname: string) {
+  const ip = socket.handshake.address
+  if (!checkRateLimit(`create:${ip}`, 5, 60000)) {
+    socket.emit('game_error', 'Too many rooms created. Please wait.')
+    return
+  }
   const code = generateRoomCode()
   const player: Player = {
     id: socket.id,
-    nickname: nickname || `Player${Math.floor(Math.random() * 1000)}`,
+    nickname: stripHtml(nickname).slice(0, 12) || `Player${Math.floor(Math.random() * 1000)}`,
     isHost: true,
     isReady: true,
     word: null,
@@ -215,6 +248,7 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     timerInterval: null,
     timerValue: 0,
     echoPlayerIds: [],
+    matchWordPair: null,
     spectators: [],
     customWordPairs: [],
   }
@@ -225,6 +259,11 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
 }
 
 export function handleJoinRoom(socket: Socket, code: string, nickname: string) {
+  const ip = socket.handshake.address
+  if (!checkRateLimit(`join:${ip}`, 10, 60000)) {
+    socket.emit('game_error', 'Too many join attempts. Please wait.')
+    return
+  }
   const roomCode = code?.toUpperCase()
   const room = rooms.get(roomCode)
 
@@ -245,7 +284,7 @@ export function handleJoinRoom(socket: Socket, code: string, nickname: string) {
 
   const player: Player = {
     id: socket.id,
-    nickname: nickname || `Player${Math.floor(Math.random() * 1000)}`,
+    nickname: stripHtml(nickname).slice(0, 12) || `Player${Math.floor(Math.random() * 1000)}`,
     isHost: false,
     isReady: false,
     word: null,
@@ -289,7 +328,8 @@ function startNewRound(room: GameRoom) {
     return
   }
 
-  const pair = getRandomWordPair(room.settings.wordDifficulty, room.settings.wordPack, room.customWordPairs)
+  const pair = room.matchWordPair || getRandomWordPair(room.settings.wordDifficulty, room.settings.wordPack, room.customWordPairs)
+  if (!room.matchWordPair) room.matchWordPair = pair
   room.wordPair = pair
   room.status = 'ASSIGNING'
   room.currentRound++
@@ -423,13 +463,15 @@ export function handleSubmitClue(socketId: string, clue: string) {
   const room = findPlayerRoom(socketId)
   if (!room || room.status !== 'CLUE') return
 
+  if (!checkRateLimit(`clue:${socketId}`, 5, 10000)) return
+
   const currentPlayer = getCurrentCluePlayer(room)
   if (!currentPlayer || currentPlayer.id !== socketId) return
 
   const player = room.players.find(p => p.id === socketId)
   if (!player || player.hasSpoken) return
 
-  player.clue = clue.trim().slice(0, 20)
+  player.clue = stripHtml(clue.trim()).slice(0, 20)
   player.hasSpoken = true
   room.clues.push({ playerId: socketId, clue: player.clue })
 
@@ -462,6 +504,8 @@ function transitionToVoting(roomCode: string) {
 export function handleCastVote(socketId: string, targetId: string) {
   const room = findPlayerRoom(socketId)
   if (!room || room.status !== 'VOTING') return
+
+  if (!checkRateLimit(`vote:${socketId}`, 5, 10000)) return
 
   const voter = room.players.find(p => p.id === socketId)
   if (!voter || voter.hasVoted || voter.eliminated) return
@@ -575,6 +619,7 @@ export function handlePlayAgain(socketId: string) {
   clearTimer(room)
   room.status = 'LOBBY'
   room.currentRound = 1
+  room.matchWordPair = null
   room.wordPair = null
   room.clues = []
   room.votes = []
@@ -657,7 +702,9 @@ export function handleChatMessage(socketId: string, text: string) {
   const player = room.players.find(p => p.id === socketId)
   if (!player || player.eliminated) return
 
-  const msg = text.trim().slice(0, 200)
+  if (!checkRateLimit(`chat:${socketId}`, 15, 10000)) return
+
+  const msg = stripHtml(text.trim()).slice(0, 200)
   if (!msg) return
 
   room.chatMessages.push({ playerId: socketId, nickname: player.nickname, text: msg, timestamp: Date.now() })
@@ -680,6 +727,11 @@ export function handleListRooms(): { code: string; playerCount: number; maxPlaye
 }
 
 export function handleJoinAsSpectator(socket: Socket, code: string) {
+  const ip = socket.handshake.address
+  if (!checkRateLimit(`spectate:${ip}`, 15, 60000)) {
+    socket.emit('game_error', 'Too many requests. Please wait.')
+    return
+  }
   const roomCode = code?.toUpperCase()
   const room = rooms.get(roomCode)
   if (!room) {
@@ -748,6 +800,7 @@ const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>()
 export function handleReconnect(socket: Socket, code: string, nickname: string) {
   const roomCode = code?.toUpperCase()
   const room = rooms.get(roomCode)
+  nickname = stripHtml(nickname).slice(0, 12)
   if (!room) {
     socket.emit('game_error', 'Room not found.')
     return

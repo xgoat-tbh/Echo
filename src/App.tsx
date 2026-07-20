@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare, Link2, Sun, Moon } from 'lucide-react'
 import { Analytics } from '@vercel/analytics/react'
@@ -18,6 +18,10 @@ import { config } from './config'
 import { getPlayerColor } from './game/playerColors'
 import { useTheme } from './hooks/useTheme'
 import { CustomWordsModal } from './game/components/CustomWordsModal'
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 export default function App() {
   const { roomState, error, isConnected, connectError, voiceOffer, voiceAnswer, iceCandidate, actions, socket } = useSocket()
@@ -41,6 +45,28 @@ export default function App() {
   const [showCustomWords, setShowCustomWords] = useState(false)
 
   const { isLight, toggle: toggleTheme } = useTheme()
+
+  // Reset UI state when leaving a room
+  useEffect(() => {
+    if (!roomState) {
+      setShowBanner(false)
+      setBannerPhase('')
+      setClueText('')
+      setChatInput('')
+      setShowMobileChat(false)
+      setShowSettings(false)
+      setShowCustomWords(false)
+    }
+  }, [!!roomState])
+
+  const particles = useMemo(() =>
+    Array.from({ length: 20 }).map((_, i) => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      color: ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#FF8A5C'][i % 5],
+      delay: Math.random() * 3,
+      duration: 3 + Math.random() * 3,
+    })), [])
 
   // Voice P2P
   const [isMuted, setIsMuted] = useState(false)
@@ -346,7 +372,7 @@ export default function App() {
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!nickname.trim() || !roomCodeInput.trim()) return
+    if (!nickname.trim() || roomCodeInput.trim().length < 6) return
     sessionStorage.setItem('echo_nickname', nickname.trim())
     actions.joinRoom(roomCodeInput.trim().toUpperCase(), nickname.trim())
   }
@@ -358,26 +384,13 @@ export default function App() {
         <div className="flex h-full flex-col overflow-y-auto bg-bg bg-ambient relative">
           {/* Background particles */}
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-            {Array.from({ length: 20 }).map((_, i) => (
+            {particles.map((p, i) => (
               <motion.div
                 key={i}
                 className="absolute w-1 h-1 rounded-full"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#FF8A5C'][i % 5],
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.15, 0.4, 0.15],
-                  scale: [1, 1.3, 1],
-                }}
-                transition={{
-                  duration: 3 + Math.random() * 3,
-                  repeat: Infinity,
-                  delay: Math.random() * 3,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
+                style={{ left: p.left, top: p.top, backgroundColor: p.color }}
+                animate={{ y: [0, -30, 0], opacity: [0.15, 0.4, 0.15], scale: [1, 1.3, 1] }}
+                transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: [0.16, 1, 0.3, 1] }}
               />
             ))}
           </div>
@@ -509,9 +522,9 @@ export default function App() {
                         <input
                           type="text"
                           required
-                          placeholder="e.g. D7K2"
+                          placeholder="e.g. D7K2X9"
                           value={roomCodeInput}
-                          onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase().slice(0, 4))}
+                          onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase().slice(0, 6))}
                           className="w-full input-premium text-center uppercase tracking-[0.25em] font-mono placeholder:tracking-normal placeholder:font-sans"
                           autoComplete="off"
                         />
@@ -526,7 +539,7 @@ export default function App() {
                         </button>
                         <button
                           type="submit"
-                          disabled={!nickname.trim() || !roomCodeInput.trim() || !isConnected}
+                          disabled={!nickname.trim() || roomCodeInput.trim().length < 6 || !isConnected}
                           className="flex-1 btn-primary px-5"
                         >
                           {isConnected ? 'Join' : 'Connecting...'}
@@ -1033,25 +1046,27 @@ export default function App() {
                 </motion.p>
               </motion.div>
 
-              {/* Step 2: Common word */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full"
-              >
-                <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
-                  The Common Word
-                </p>
-                <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
-                  {publicWord}
-                </p>
-                <div className="divider mt-4 mb-3" />
-                <p className="text-[11px] text-text-tertiary leading-[1.6]">
-                  All commoners describe this word.<br />
-                  The Echo describes a different word.
-                </p>
-              </motion.div>
+              {/* Step 2: Common word — hidden from Echo */}
+              {!self?.isEcho && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full"
+                >
+                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                    The Common Word
+                  </p>
+                  <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                    {publicWord}
+                  </p>
+                  <div className="divider mt-4 mb-3" />
+                  <p className="text-[11px] text-text-tertiary leading-[1.6]">
+                    All commoners describe this word.<br />
+                    The Echo describes a different word.
+                  </p>
+                </motion.div>
+              )}
 
               {/* Step 3: Your secret word */}
               <WordReveal word={self?.word || null} visible />
@@ -1061,14 +1076,16 @@ export default function App() {
           {/* ─── CLUE PHASE ─── */}
           {status === 'CLUE' && (
             <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
-              <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
-                  The Word Is
-                </p>
-                <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
-                  {publicWord}
-                </p>
-              </div>
+              {!self?.isEcho && (
+                <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
+                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                    The Word Is
+                  </p>
+                  <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                    {publicWord}
+                  </p>
+                </div>
+              )}
               <WordReveal word={self?.word || null} visible />
 
               <div className="text-center mt-3">
@@ -1121,80 +1138,65 @@ export default function App() {
                 </div>
               )}
 
-              {/* Speaker queue — Find the Fox style */}
+              {/* Per-player clue status with timers */}
               {clueOrder?.length > 0 && (
-                <div className="w-full mt-2">
-                  <div className="flex items-center justify-center gap-1">
-                    {clueOrder.map((playerIdx, orderIdx) => {
-                      const p = players[playerIdx]
-                      if (!p) return null
-                      const isPast = orderIdx < currentSpeakerIndex
-                      const isCurrent = orderIdx === currentSpeakerIndex
-                      const isUpcoming = orderIdx > currentSpeakerIndex
-                      const color = getPlayerColor(p.id, playerIdx)
-                      return (
-                        <motion.div
-                          key={orderIdx}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{
-                            opacity: isCurrent ? 1 : isPast ? 0.5 : 0.7,
-                            y: 0,
-                            scale: isCurrent ? 1.15 : 1,
-                          }}
-                          transition={{ duration: 0.3, delay: orderIdx * 0.03 }}
-                          className="relative"
+                <div className="w-full space-y-1 mt-2">
+                  {clueOrder.map((playerIdx, orderIdx) => {
+                    const p = players[playerIdx]
+                    if (!p) return null
+                    const isPast = orderIdx < currentSpeakerIndex
+                    const isCurrent = orderIdx === currentSpeakerIndex
+                    const color = getPlayerColor(p.id, playerIdx)
+                    return (
+                      <motion.div
+                        key={p.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: orderIdx * 0.04, duration: 0.3 }}
+                        className={cn(
+                          'flex items-center gap-3 rounded-[14px] px-4 py-3 transition-all duration-300',
+                          isCurrent ? 'surface-elevated' : 'hover:bg-bg-secondary/30'
+                        )}
+                        style={isCurrent ? { boxShadow: `0 0 0 1px ${color}30, 0 0 16px ${color}10` } : {}}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+                          style={{ backgroundColor: `${color}20`, color }}
                         >
-                          {/* Speaking glow ring for current speaker */}
-                          {isCurrent && (
-                            <motion.div
-                              animate={{ opacity: [0.4, 0.8, 0.4] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                              className="absolute -inset-1 rounded-full"
-                              style={{ boxShadow: `0 0 12px ${color}60` }}
-                            />
-                          )}
-                          <div
-                            className={cn(
-                              'relative z-10 w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300',
-                              isCurrent ? 'ring-2' : '',
-                              isPast ? 'opacity-60 grayscale' : ''
+                          {p.nickname.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[13px] font-semibold text-text-primary block truncate">
+                            {p.nickname}
+                            {p.id === socket?.id && (
+                              <span className="text-[10px] text-text-tertiary font-medium ml-1.5">(You)</span>
                             )}
-                            style={{
-                              backgroundColor: isCurrent ? `${color}35` : `${color}18`,
-                              color,
-                              boxShadow: isCurrent ? `0 0 0 2px ${color}80` : 'none',
-                            }}
-                          >
-                            {isPast ? (
-                              <Check className="w-3.5 h-3.5" />
-                            ) : (
-                              p.nickname.charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          {/* Name label */}
-                          <span
-                            className={cn(
-                              'block text-[8px] font-semibold text-center mt-0.5 max-w-[36px] truncate transition-all duration-200',
-                              isCurrent ? 'text-text-primary' : 'text-text-tertiary'
-                            )}
-                          >
-                            {isCurrent ? 'YOU' : p.nickname.slice(0, 4)}
                           </span>
-                        </motion.div>
-                      )
-                    })}
-                  </div>
-                  {/* Status text */}
-                  <p className="text-[10px] text-center text-text-tertiary font-medium mt-2 tracking-wide">
-                    {isMyTurn
-                      ? 'Your turn to give a clue'
-                      : `Waiting for ${currentSpeaker?.nickname || 'Speaker'}...`
-                    }
-                  </p>
+                          <span className={cn(
+                            'text-[11px] font-medium',
+                            isPast ? 'text-success' : isCurrent ? 'text-accent' : 'text-text-tertiary'
+                          )}>
+                            {isPast ? 'Clue given' : isCurrent ? 'Giving clue...' : 'Waiting'}
+                          </span>
+                        </div>
+                        {isCurrent && (
+                          <Timer value={timerValue} max={settings.clueTimeSeconds} />
+                        )}
+                        {isPast && (
+                          <div className="w-[60px] flex justify-center">
+                            <Check className="w-5 h-5 text-success/60" />
+                          </div>
+                        )}
+                        {!isPast && !isCurrent && (
+                          <div className="w-[60px] text-center text-[11px] text-text-tertiary font-mono font-semibold">
+                            #{orderIdx + 1}
+                          </div>
+                        )}
+                      </motion.div>
+                    )
+                  })}
                 </div>
               )}
-
-              <Timer durationSeconds={settings.clueTimeSeconds} running paused={self?.hasSpoken || !isMyTurn} />
             </div>
           )}
 
@@ -1226,7 +1228,7 @@ export default function App() {
                   {roomState.chatMessages.map((msg, i) => {
                     const player = players.find(p => p.id === msg.playerId)
                     const color = player ? getPlayerColor(player.id, players.indexOf(player)) : undefined
-                    const highlighted = msg.text.replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
+                    const highlighted = escapeHtml(msg.text).replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
                     return (
                       <div key={i} className="flex items-start gap-2 px-1">
                         <span className="text-[11px] font-semibold shrink-0" style={color ? { color } : {}}>{msg.nickname}:</span>
@@ -1257,7 +1259,7 @@ export default function App() {
                 Skip to Voting
               </button>
 
-              <Timer durationSeconds={settings.discussTimeSeconds} running />
+              <Timer value={timerValue} max={settings.discussTimeSeconds} />
             </div>
           )}
 
@@ -1297,7 +1299,7 @@ export default function App() {
                   {roomState.chatMessages.map((msg, i) => {
                     const player = players.find(p => p.id === msg.playerId)
                     const color = player ? getPlayerColor(player.id, players.indexOf(player)) : undefined
-                    const highlighted = msg.text.replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
+                    const highlighted = escapeHtml(msg.text).replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
                     return (
                       <div key={i} className="flex items-start gap-2 px-1">
                         <span className="text-[11px] font-semibold shrink-0" style={color ? { color } : {}}>{msg.nickname}:</span>
@@ -1321,7 +1323,7 @@ export default function App() {
                 </button>
               </div>
 
-              <Timer durationSeconds={settings.voteTimeSeconds} running />
+              <Timer value={timerValue} max={settings.voteTimeSeconds} />
             </div>
           )}
 
