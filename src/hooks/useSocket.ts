@@ -28,6 +28,7 @@ export interface RoomState {
   }
   currentRound: number
   currentSpeakerIndex: number
+  clueOrder: number[]
   publicWord: string | null
   echoWord: string | null
   revealedEchoId: string | null
@@ -142,6 +143,12 @@ export function useSocket() {
     }
   }, [])
 
+  const skipDiscussion = useCallback(() => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('skip_discussion')
+    }
+  }, [])
+
   const castVote = useCallback((targetId: string) => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('cast_vote', { targetId })
@@ -151,6 +158,13 @@ export function useSocket() {
   const playAgain = useCallback(() => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('play_again')
+    }
+  }, [])
+
+  const leaveRoom = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('leave_room')
+      socketRef.current.disconnect()
     }
   }, [])
 
@@ -193,8 +207,10 @@ export function useSocket() {
       toggleReady,
       startGame,
       submitClue,
+      skipDiscussion,
       castVote,
       playAgain,
+      leaveRoom,
       toggleMute,
       relayVoiceOffer,
       relayVoiceAnswer,

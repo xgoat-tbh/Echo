@@ -15,9 +15,11 @@ import {
   handleToggleReady,
   handleStartGame,
   handleSubmitClue,
+  handleSkipDiscussion,
   handleCastVote,
   handlePlayAgain,
   handleToggleMute,
+  handleLeaveRoom,
   handleDisconnect,
 } from './game.js'
 
@@ -82,6 +84,10 @@ io.on('connection', (socket) => {
     handleStartGame(socket.id)
   })
 
+  socket.on('skip_discussion', () => {
+    handleSkipDiscussion(socket.id)
+  })
+
   socket.on('submit_clue', ({ clue }) => {
     handleSubmitClue(socket.id, clue)
   })
@@ -92,6 +98,10 @@ io.on('connection', (socket) => {
 
   socket.on('play_again', () => {
     handlePlayAgain(socket.id)
+  })
+
+  socket.on('leave_room', () => {
+    handleLeaveRoom(socket.id)
   })
 
   socket.on('toggle_mute', (isMuted) => {

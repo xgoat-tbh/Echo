@@ -403,8 +403,9 @@ export default function App() {
   }
 
   // ─── RENDER: In Room ───
-  const { status, code, players, settings, currentRound, currentSpeakerIndex, timerValue, publicWord, clues, revealedEchoId, winnerId } = roomState
-  const currentSpeaker = players[currentSpeakerIndex]
+  const { status, code, players, settings, currentRound, currentSpeakerIndex, clueOrder, timerValue, publicWord, clues, revealedEchoId, winnerId } = roomState
+  const speakerPlayerIdx = clueOrder?.length > 0 && currentSpeakerIndex >= 0 ? clueOrder[currentSpeakerIndex] : currentSpeakerIndex
+  const currentSpeaker = speakerPlayerIdx >= 0 ? players[speakerPlayerIdx] : undefined
   const isMyTurn = currentSpeaker?.id === socket?.id
   const lobbyPhase = 'lobby'
 
@@ -578,6 +579,13 @@ export default function App() {
                 })}
               </div>
 
+              <button
+                onClick={actions.skipDiscussion}
+                className="px-6 py-2.5 bg-bg-secondary border border-border/60 hover:bg-bg-secondary/80 text-text-primary font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer"
+              >
+                Skip to Voting
+              </button>
+
               <Timer durationSeconds={settings.discussTimeSeconds} running />
             </div>
           )}
@@ -596,6 +604,21 @@ export default function App() {
                 hasVoted={self?.hasVoted || false}
                 onVote={actions.castVote}
               />
+
+              {/* Vote progress bar */}
+              {(() => {
+                const voted = players.filter(p => p.hasVoted).length
+                const total = players.length
+                const pct = total > 0 ? (voted / total) * 100 : 0
+                return (
+                  <div className="w-full flex items-center gap-3 px-1">
+                    <div className="flex-1 h-[4px] rounded-full bg-bg-tertiary overflow-hidden">
+                      <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-text-secondary tabular-nums">{voted}/{total}</span>
+                  </div>
+                )
+              })()}
 
               <Timer durationSeconds={settings.voteTimeSeconds} running />
             </div>
@@ -622,7 +645,7 @@ export default function App() {
               revealedEchoId={revealedEchoId}
               votes={roomState.votes}
               onPlayAgain={actions.playAgain}
-              onLeave={() => { }}
+              onLeave={actions.leaveRoom}
             />
           )}
         </main>
@@ -643,6 +666,13 @@ export default function App() {
           </button>
 
           <div className="flex-1" />
+
+          <button
+            onClick={actions.leaveRoom}
+            className="px-3.5 py-2 rounded-[12px] text-[12px] font-semibold text-error/70 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/40 hover:border-error/20 transition-all duration-200 cursor-pointer"
+          >
+            Leave
+          </button>
 
           <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-medium tracking-wide">
             <span className={cn('w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />

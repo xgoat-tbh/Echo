@@ -29,6 +29,7 @@ export interface GameRoom {
   }
   currentRound: number
   currentSpeakerIndex: number
+  clueOrder: number[]
   wordPair: WordPair | null
   clues: { playerId: string; clue: string }[]
   votes: { voterId: string; targetId: string }[]
@@ -36,6 +37,8 @@ export interface GameRoom {
   winnerId: string | null
   timerInterval: ReturnType<typeof setInterval> | null
   timerValue: number
+  // Track echo identity across play-again
+  echoPlayerId: string | null
 }
 
 export const rooms = new Map<string, GameRoom>()
@@ -51,6 +54,15 @@ function getIO(): SocketIOServer {
 }
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+function shuffleArray(arr: number[]): number[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 export function generateRoomCode(): string {
   let code = ''
@@ -71,6 +83,7 @@ export function getFilteredRoomState(room: GameRoom, playerId: string) {
     settings: room.settings,
     currentRound: room.currentRound,
     currentSpeakerIndex: room.currentSpeakerIndex,
+    clueOrder: (room.status === 'CLUE' || room.status === 'DISCUSSION') ? room.clueOrder : [],
     publicWord: room.status !== 'LOBBY' ? room.wordPair?.word ?? null : null,
     echoWord: isEnded ? room.wordPair?.echo ?? null : null,
     revealedEchoId: room.revealedEchoId,
@@ -162,11 +175,12 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     settings: {
       maxPlayers: 12,
       clueTimeSeconds: 30,
-      discussTimeSeconds: 120,
+      discussTimeSeconds: 60,
       voteTimeSeconds: 30,
     },
     currentRound: 1,
     currentSpeakerIndex: 0,
+    clueOrder: [],
     wordPair: null,
     clues: [],
     votes: [],
@@ -174,6 +188,7 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     winnerId: null,
     timerInterval: null,
     timerValue: 0,
+    echoPlayerId: null,
   }
 
   rooms.set(code, room)
@@ -248,17 +263,23 @@ export function handleStartGame(socketId: string) {
     return
   }
 
-  // Assign words
   const pair = getRandomWordPair()
   room.wordPair = pair
   room.status = 'ASSIGNING'
 
-  // Pick random Echo
-  const echoIndex = Math.floor(Math.random() * room.players.length)
+  // Pick Echo — use existing echoPlayerId if set (from play-again), else random
+  let echoIdx: number
+  if (room.echoPlayerId) {
+    const existing = room.players.findIndex(p => p.id === room.echoPlayerId)
+    echoIdx = existing >= 0 ? existing : Math.floor(Math.random() * room.players.length)
+  } else {
+    echoIdx = Math.floor(Math.random() * room.players.length)
+  }
+  room.echoPlayerId = room.players[echoIdx].id
 
   room.players.forEach((p, i) => {
-    p.isEcho = i === echoIndex
-    p.word = i === echoIndex ? pair.echo : pair.word
+    p.isEcho = i === echoIdx
+    p.word = i === echoIdx ? pair.echo : pair.word
     p.clue = null
     p.hasSpoken = false
     p.hasVoted = false
@@ -271,9 +292,17 @@ export function handleStartGame(socketId: string) {
   room.revealedEchoId = null
   room.winnerId = null
 
+  // Randomize clue speaking order — Echo must not be first
+  let order = shuffleArray(room.players.map((_, i) => i))
+  const echoPos = order.indexOf(echoIdx)
+  if (echoPos === 0) {
+    // Swap with second position
+    [order[0], order[1]] = [order[1], order[0]]
+  }
+  room.clueOrder = order
+
   broadcastRoomState(room)
 
-  // Brief assign phase, then auto-advance to clue
   setTimeout(() => {
     const r = rooms.get(room.code)
     if (!r || r.status !== 'ASSIGNING') return
@@ -284,8 +313,14 @@ export function handleStartGame(socketId: string) {
   }, 3000)
 }
 
+function getCurrentCluePlayer(room: GameRoom): Player | null {
+  if (room.currentSpeakerIndex < 0 || room.currentSpeakerIndex >= room.clueOrder.length) return null
+  const playerIdx = room.clueOrder[room.currentSpeakerIndex]
+  return room.players[playerIdx] ?? null
+}
+
 function startClueTimer(room: GameRoom) {
-  const currentPlayer = room.players[room.currentSpeakerIndex]
+  const currentPlayer = getCurrentCluePlayer(room)
   if (!currentPlayer || room.status !== 'CLUE') return
   startTimer(room, room.settings.clueTimeSeconds, () => {
     advanceClue(room.code)
@@ -296,19 +331,18 @@ function advanceClue(roomCode: string) {
   const room = rooms.get(roomCode)
   if (!room || room.status !== 'CLUE') return
 
-  // Find next player who hasn't spoken
-  let nextIndex = room.currentSpeakerIndex + 1
-  while (nextIndex < room.players.length) {
-    if (!room.players[nextIndex].hasSpoken) break
-    nextIndex++
+  let nextIdx = room.currentSpeakerIndex + 1
+  while (nextIdx < room.clueOrder.length) {
+    const pIdx = room.clueOrder[nextIdx]
+    if (!room.players[pIdx]?.hasSpoken) break
+    nextIdx++
   }
 
-  if (nextIndex < room.players.length) {
-    room.currentSpeakerIndex = nextIndex
+  if (nextIdx < room.clueOrder.length) {
+    room.currentSpeakerIndex = nextIdx
     broadcastRoomState(room)
     startClueTimer(room)
   } else {
-    // All players have spoken, transition to discussion
     room.status = 'DISCUSSION'
     room.currentSpeakerIndex = -1
     broadcastRoomState(room)
@@ -322,10 +356,10 @@ export function handleSubmitClue(socketId: string, clue: string) {
   const room = findPlayerRoom(socketId)
   if (!room || room.status !== 'CLUE') return
 
-  const playerIndex = room.players.findIndex(p => p.id === socketId)
-  if (playerIndex !== room.currentSpeakerIndex) return
+  const currentPlayer = getCurrentCluePlayer(room)
+  if (!currentPlayer || currentPlayer.id !== socketId) return
 
-  const player = room.players[playerIndex]
+  const player = room.players.find(p => p.id === socketId)
   if (!player || player.hasSpoken) return
 
   player.clue = clue.trim().slice(0, 20)
@@ -335,6 +369,13 @@ export function handleSubmitClue(socketId: string, clue: string) {
   broadcastRoomState(room)
   clearTimer(room)
   advanceClue(room.code)
+}
+
+export function handleSkipDiscussion(socketId: string) {
+  const room = findPlayerRoom(socketId)
+  if (!room || room.status !== 'DISCUSSION') return
+  clearTimer(room)
+  transitionToVoting(room.code)
 }
 
 function transitionToVoting(roomCode: string) {
@@ -380,7 +421,6 @@ function finishVoting(roomCode: string) {
 
   room.status = 'REVEAL'
 
-  // Tally votes
   const voteCounts: Record<string, number> = {}
   room.votes.forEach(v => {
     voteCounts[v.targetId] = (voteCounts[v.targetId] || 0) + 1
@@ -393,25 +433,20 @@ function finishVoting(roomCode: string) {
     else if (count === maxVotes) { candidates.push(id) }
   })
 
-  // If tie, pick random
   const eliminatedId = candidates.length > 0 && maxVotes > 0
     ? candidates[Math.floor(Math.random() * candidates.length)]
     : null
 
   room.revealedEchoId = eliminatedId
 
-  // Determine winner
   if (eliminatedId) {
     const eliminatedPlayer = room.players.find(p => p.id === eliminatedId)
     if (eliminatedPlayer?.isEcho) {
-      // Echo was voted out — non-Echo players win
       room.winnerId = 'VILLAGERS'
     } else {
-      // Wrong player voted out — Echo wins
       room.winnerId = eliminatedPlayer ? 'ECHO' : 'VILLAGERS'
     }
   } else {
-    // No votes — Echo wins by default
     room.winnerId = 'ECHO'
   }
 
@@ -441,14 +476,15 @@ export function handlePlayAgain(socketId: string) {
   room.revealedEchoId = null
   room.winnerId = null
   room.currentSpeakerIndex = 0
+  room.clueOrder = []
 
+  // Keep isEcho and echoPlayerId fixed across rounds
   room.players.forEach(p => {
     p.word = null
     p.clue = null
     p.hasSpoken = false
     p.hasVoted = false
     p.voteTarget = null
-    p.isEcho = false
     p.isReady = p.isHost
   })
 
@@ -462,6 +498,10 @@ export function handleToggleMute(socketId: string, isMuted: boolean) {
   if (!player) return
   player.isMuted = isMuted
   broadcastRoomState(room)
+}
+
+export function handleLeaveRoom(socketId: string) {
+  handleDisconnect(socketId)
 }
 
 export function handleDisconnect(socketId: string) {
@@ -481,13 +521,16 @@ export function handleDisconnect(socketId: string) {
         room.players[0].isReady = true
       }
 
-      // Adjust currentSpeakerIndex
       if (room.status === 'CLUE') {
-        if (pIndex <= room.currentSpeakerIndex) {
-          room.currentSpeakerIndex = Math.max(0, room.currentSpeakerIndex - 1)
+        // Adjust clueOrder
+        const cluePos = room.clueOrder.indexOf(pIndex)
+        if (cluePos >= 0) {
+          room.clueOrder.splice(cluePos, 1)
+          // Re-map clueOrder to account for removed player
+          room.clueOrder = room.clueOrder.map(idx => idx > pIndex ? idx - 1 : idx)
         }
-        if (room.currentSpeakerIndex >= room.players.length) {
-          room.currentSpeakerIndex = 0
+        if (room.currentSpeakerIndex >= room.clueOrder.length) {
+          room.currentSpeakerIndex = Math.max(0, room.clueOrder.length - 1)
         }
       }
 
