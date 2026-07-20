@@ -52,14 +52,14 @@ export function Modal({
       {open && (
         <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
           <motion.div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-black/75"
             {...overlayTransition}
             onClick={closeOnOverlay ? onClose : undefined}
           />
           <motion.div
             className={cn(
-              'relative w-full rounded-xl border border-border/30',
-              'bg-bg-elevated/80 backdrop-blur-xl shadow-xl',
+              'relative w-full rounded-2xl border border-border',
+              'bg-bg-elevated/95 backdrop-blur-xl shadow-2xl',
               sizeStyles[size]
             )}
             {...panelSlideUp}
@@ -67,24 +67,25 @@ export function Modal({
             aria-modal="true"
             aria-label={title}
           >
-            <div className="flex items-center justify-between px-6 pt-5 pb-3">
-              <h2 className="text-lg font-semibold text-text-primary">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <h2 className="text-base font-bold text-text-primary tracking-tight">
                 {title}
               </h2>
               {showCloseButton && (
                 <Button
-                  variant="icon"
+                  variant="ghost"
                   size="sm"
                   onClick={onClose}
                   aria-label="Close"
+                  className="h-7 w-7 p-0 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
                 >
                   <svg
-                    width="16"
-                    height="16"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >

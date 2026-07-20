@@ -15,10 +15,10 @@ export function LevelMeter({
   level,
   peak,
   width = 120,
-  height = 20,
+  height = 12,
   orientation = 'horizontal',
   showLabel = false,
-  numSegments = 12,
+  numSegments = 14,
 }: LevelMeterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const peakRef = useRef(0)
@@ -49,8 +49,8 @@ export function LevelMeter({
 
     const isHorizontal = orientation === 'horizontal'
     const segSize = isHorizontal
-      ? (width - 2) / numSegments
-      : (height - 2) / numSegments
+      ? (width - (numSegments - 1) * 2) / numSegments
+      : (height - (numSegments - 1) * 2) / numSegments
     const gap = 2
 
     ctx.strokeStyle = 'transparent'
@@ -62,39 +62,33 @@ export function LevelMeter({
 
       let color: string
       if (isPeak) {
-        color = 'hsl(220, 70%, 55%)'
+        color = 'hsl(0, 0%, 98%)'
       } else if (isActive) {
         if (i < numSegments * 0.7) {
-          color = 'hsl(220, 60%, 50%)'
+          color = 'hsl(240, 5%, 85%)'
         } else if (i < numSegments * 0.9) {
-          color = 'hsl(45, 90%, 50%)'
+          color = 'hsl(47, 95%, 45%)'
         } else {
-          color = 'hsl(0, 80%, 55%)'
+          color = 'hsl(358, 75%, 50%)'
         }
       } else {
-        color = 'hsla(220, 8%, 30%, 0.4)'
+        color = 'hsla(240, 5%, 80%, 0.08)'
       }
 
       ctx.fillStyle = color
 
       if (isHorizontal) {
-        const x = 1 + i * (segSize + gap)
-        ctx.fillRect(x, 1, segSize, height - 2)
+        const x = i * (segSize + gap)
+        ctx.fillRect(x, 0, segSize, height)
       } else {
-        const y = height - 1 - (i + 1) * (segSize + gap)
-        ctx.fillRect(1, y, width - 2, segSize)
+        const y = height - (i + 1) * (segSize + gap)
+        ctx.fillRect(0, y, width, segSize)
       }
     }
-
-    // Rounded corners on segments
-    const segments = canvas.querySelectorAll('rect')
-    segments.forEach((seg) => {
-      ;(seg as any).style.borderRadius = '2px'
-    })
   }, [displayLevel, peak, width, height, orientation, numSegments])
 
   return (
-    <div className={cn('flex items-center gap-2', orientation === 'vertical' && 'flex-col')}>
+    <div className={cn('flex items-center gap-2.5', orientation === 'vertical' && 'flex-col')}>
       <canvas
         ref={canvasRef}
         width={width}
@@ -103,8 +97,8 @@ export function LevelMeter({
         style={{ width, height }}
       />
       {showLabel && (
-        <span className="text-xs text-text-secondary tabular-nums min-w-[4rem]">
-          {dBFS === -Infinity ? '-∞' : `${dBFS}`} dBFS
+        <span className="text-[10px] font-mono text-text-secondary tabular-nums min-w-[3.5rem] text-right font-semibold">
+          {dBFS === -Infinity ? '-∞' : `${dBFS}`} dB
         </span>
       )}
     </div>

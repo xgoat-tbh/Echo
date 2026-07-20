@@ -10,22 +10,24 @@ export function WordReveal({ word, visible }: WordRevealProps) {
     <AnimatePresence>
       {visible && word && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: -10 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-xl border border-border bg-bg-secondary px-6 py-4 text-center"
+          initial={{ opacity: 0, scale: 0.96, y: 12, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, scale: 0.96, y: -8, filter: 'blur(4px)' }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-2xl border border-border bg-bg-secondary/40 backdrop-blur-sm p-8 text-center max-w-sm w-full shadow-2xl relative overflow-hidden"
         >
-          <p className="text-[11px] uppercase tracking-widest text-text-tertiary mb-1">
-            Your word
+          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-text-tertiary mb-3">
+            Your Secret Word
           </p>
-          <p className="text-2xl font-bold text-text-primary tracking-tight">
-            {word}
-          </p>
-          <p className="text-[11px] text-text-tertiary mt-2">
-            Describe it without saying it.
+          <div className="border-y border-border/40 py-5 my-3">
+            <p className="text-3xl font-black text-text-primary tracking-widest select-none uppercase">
+              {word}
+            </p>
+          </div>
+          <p className="text-xs text-text-secondary leading-relaxed font-normal mt-3">
+            Describe your word without saying,
             <br />
-            Don't spell it. Don't translate it.
+            spelling, or translating it.
           </p>
         </motion.div>
       )}

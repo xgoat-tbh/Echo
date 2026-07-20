@@ -12,12 +12,13 @@ export function WaveformRenderer({
   analyser,
   width = 160,
   height = 32,
-  color = 'hsla(220, 60%, 70%, 0.6)',
+  color = 'hsla(0, 0%, 98%, 0.4)',
   isActive = true,
 }: WaveformRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationIdRef = useRef<number>(0)
 
+  // Draw waveform
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !analyser || !isActive) return
@@ -57,23 +58,28 @@ export function WaveformRenderer({
     }
   }, [analyser, width, height, color, isActive])
 
-  if (!analyser || !isActive) {
-    return (
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        style={{ width, height }}
-      />
-    )
-  }
+  // Draw flat line when silent
+  useEffect(() => {
+    if (analyser && isActive) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = 'hsla(240, 5%, 80%, 0.12)'
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(0, height / 2)
+    ctx.lineTo(width, height / 2)
+    ctx.stroke()
+  }, [analyser, isActive, width, height])
 
   return (
     <canvas
       ref={canvasRef}
       width={width}
       height={height}
-      className="rounded-sm"
+      className="rounded-lg"
       style={{ width, height }}
     />
   )

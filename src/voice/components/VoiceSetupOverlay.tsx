@@ -21,26 +21,26 @@ export function VoiceSetupOverlay() {
   return (
     <AnimatePresence>
       {showSetup && (
-        <div className="fixed inset-0 z-overlay flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
           <motion.div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-black/75"
             {...overlayTransition}
             onClick={() => {}}
           />
           <motion.div
-            className="relative w-full max-w-md rounded-xl border border-border/30 bg-bg-elevated/80 backdrop-blur-xl shadow-xl"
+            className="relative w-full max-w-md rounded-2xl border border-border bg-bg-elevated/95 backdrop-blur-xl shadow-2xl overflow-hidden"
             {...panelSlideUp}
           >
-            <div className="px-6 pt-6 pb-4">
-              <h1 className="text-xl font-semibold text-text-primary">
+            <div className="px-6 pt-6 pb-4 border-b border-border/40">
+              <h1 className="text-base font-bold text-text-primary tracking-tight">
                 Microphone Setup
               </h1>
-              <p className="text-sm text-text-secondary mt-1">
-                Configure your audio before joining
+              <p className="text-xs text-text-secondary mt-1">
+                Configure your audio before joining the game voice channel
               </p>
             </div>
 
-            <div className="px-6 pb-2 space-y-5">
+            <div className="px-6 py-5 space-y-5">
               <DeviceSelector
                 label="Microphone"
                 deviceKind="audioinput"
@@ -61,7 +61,7 @@ export function VoiceSetupOverlay() {
                 latency={null}
               />
 
-              <div className="space-y-1">
+              <div className="space-y-1 bg-bg-secondary/40 border border-border/60 rounded-xl p-1">
                 <Toggle
                   checked={settings.echoCancellation}
                   onChange={(checked) =>
@@ -84,16 +84,16 @@ export function VoiceSetupOverlay() {
                     updateSettings({ pushToTalk: checked })
                   }
                   label={`Push to Talk (${settings.pushToTalkKey})`}
-                  description="Hold to speak, release to mute"
+                  description="Hold key to speak, release to mute"
                 />
               </div>
             </div>
 
-            <div className="px-6 pb-6 pt-4">
-              <Button variant="primary" size="lg" fullWidth onClick={handleJoin}>
-                Join Voice
+            <div className="px-6 pb-6 pt-2">
+              <Button variant="primary" size="lg" fullWidth onClick={handleJoin} className="font-semibold shadow-xl">
+                Join Voice Channel
               </Button>
-              <p className="text-[11px] text-text-tertiary text-center mt-2">
+              <p className="text-[10px] text-text-tertiary text-center mt-2.5 uppercase tracking-wide font-medium">
                 Microphone permission must be granted in your browser
               </p>
             </div>

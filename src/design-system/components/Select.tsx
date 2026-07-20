@@ -57,10 +57,10 @@ export function Select({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex h-10 w-full items-center justify-between rounded-lg border px-3 text-sm',
-          'border-border bg-transparent text-text-primary',
-          'hover:border-border-hover transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+          'flex h-[40px] w-full items-center justify-between rounded-xl border px-4 text-sm transition-all',
+          'border-border/80 bg-bg-secondary/40 text-text-primary backdrop-blur-sm',
+          'hover:border-border-hover/80 hover:bg-bg-tertiary/40',
+          'focus:outline-none focus:ring-2 focus:ring-accent-hover/30'
         )}
       >
         <span className={cn(!selected && 'text-text-tertiary')}>
@@ -68,8 +68,8 @@ export function Select({
         </span>
         <svg
           className={cn(
-            'h-4 w-4 text-text-secondary transition-transform',
-            open && 'rotate-180'
+            'h-4 w-4 text-text-secondary transition-transform duration-200',
+            open && 'rotate-180 text-text-primary'
           )}
           viewBox="0 0 24 24"
           fill="none"
@@ -84,13 +84,13 @@ export function Select({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              'absolute z-dropdown mt-1 w-full rounded-lg border border-border py-1',
-              'bg-bg-elevated shadow-lg backdrop-blur-xl'
+              'absolute z-dropdown mt-1.5 w-full rounded-xl border border-border/80 py-1.5 overflow-hidden',
+              'bg-bg-elevated/95 shadow-xl backdrop-blur-xl'
             )}
           >
             {options.map((option) => (
@@ -99,10 +99,10 @@ export function Select({
                 type="button"
                 onClick={() => handleSelect(option.value)}
                 className={cn(
-                  'flex w-full items-center px-3 py-2 text-sm transition-colors',
+                  'flex w-full items-center px-4 py-2.5 text-sm transition-colors text-left',
                   option.value === value
-                    ? 'bg-accent-subtle text-accent'
-                    : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                    ? 'bg-accent-subtle text-text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-bg-tertiary/80 hover:text-text-primary'
                 )}
               >
                 {option.label}

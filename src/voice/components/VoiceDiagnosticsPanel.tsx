@@ -1,5 +1,4 @@
 import { Modal } from '../../design-system/components/Modal'
-import { cn } from '../../lib/cn'
 import type { VoiceDiagnostics } from '../../store/voiceStore'
 
 interface VoiceDiagnosticsPanelProps {
@@ -10,8 +9,8 @@ interface VoiceDiagnosticsPanelProps {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-xs text-text-secondary">{label}</span>
+    <div className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+      <span className="text-xs text-text-secondary font-medium">{label}</span>
       <span className="text-xs text-text-primary font-mono tabular-nums">
         {value}
       </span>
@@ -22,10 +21,10 @@ function Row({ label, value }: { label: string; value: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-[11px] uppercase tracking-wider text-text-tertiary font-semibold mb-2">
+      <h3 className="text-[10px] uppercase tracking-[0.2em] text-text-tertiary font-bold mb-2 pl-1">
         {title}
       </h3>
-      <div className="rounded-lg border border-border bg-bg-tertiary/50 px-3 py-2">
+      <div className="rounded-xl border border-border/80 bg-bg-secondary/30 px-4 py-1 select-text">
         {children}
       </div>
     </div>
@@ -41,31 +40,31 @@ export function VoiceDiagnosticsPanel({
 
   return (
     <Modal open={open} onClose={onClose} title="Voice Diagnostics" size="md">
-      <div className="flex flex-col gap-4 mt-2">
-        <Section title="Connection">
-          <Row label="RTT" value={`${diagnostics.rtt} ms`} />
+      <div className="flex flex-col gap-4 mt-2 max-h-[60vh] overflow-y-auto pr-1">
+        <Section title="Connection Performance">
+          <Row label="RTT (Round Trip Time)" value={`${diagnostics.rtt} ms`} />
           <Row label="Jitter" value={`${diagnostics.jitter} ms`} />
-          <Row label="Packet Loss" value={`${(diagnostics.packetLoss * 100).toFixed(1)}%`} />
-          <Row label="Bitrate" value={`${(diagnostics.bitrate / 1000).toFixed(0)} kbps`} />
-          <Row label="Codec" value={diagnostics.codec} />
-          <Row label="FEC" value={diagnostics.fecActive ? 'Active' : 'Inactive'} />
+          <Row label="Packet Loss" value={`${(diagnostics.packetLoss * 100).toFixed(2)}%`} />
+          <Row label="Bitrate" value={`${(diagnostics.bitrate / 1000).toFixed(1)} kbps`} />
+          <Row label="Codec / Audio Profile" value={diagnostics.codec} />
+          <Row label="FEC (Forward Error Correction)" value={diagnostics.fecActive ? 'Active' : 'Inactive'} />
         </Section>
 
-        <Section title="Audio Input">
-          <Row label="Device" value={diagnostics.inputDeviceName} />
+        <Section title="Audio Hardware Input">
+          <Row label="Selected Input Device" value={diagnostics.inputDeviceName || 'Default Microphone'} />
           <Row label="Sample Rate" value={`${diagnostics.inputSampleRate} Hz`} />
-          <Row label="Level" value={`${diagnostics.inputLevel.toFixed(1)} dBFS`} />
-          <Row label="Noise Floor" value={`${diagnostics.noiseLevel.toFixed(1)} dBFS`} />
+          <Row label="Active Level" value={`${diagnostics.inputLevel.toFixed(1)} dBFS`} />
+          <Row label="Ambient Noise Floor" value={`${diagnostics.noiseLevel.toFixed(1)} dBFS`} />
         </Section>
 
-        <Section title="Audio Output">
-          <Row label="Device" value={diagnostics.outputDeviceName} />
-          <Row label="Latency" value={`${diagnostics.outputLatency} ms`} />
+        <Section title="Audio Hardware Output">
+          <Row label="Selected Output Device" value={diagnostics.outputDeviceName || 'Default Speakers'} />
+          <Row label="Output Latency" value={`${diagnostics.outputLatency} ms`} />
         </Section>
 
-        <Section title="Network">
-          <Row label="ICE Type" value={diagnostics.iceType} />
-          <Row label="Local IP" value={diagnostics.localIp} />
+        <Section title="Network Routing">
+          <Row label="ICE Candidate Type" value={diagnostics.iceType} />
+          <Row label="Local Endpoint IP" value={diagnostics.localIp} />
         </Section>
       </div>
     </Modal>

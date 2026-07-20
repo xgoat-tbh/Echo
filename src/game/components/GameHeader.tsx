@@ -20,46 +20,57 @@ const phaseLabels: Record<GamePhase, string> = {
 }
 
 const phaseColors: Record<GamePhase, string> = {
-  lobby: 'text-text-secondary',
-  assigning: 'text-text-secondary',
-  clue: 'text-accent',
-  discussion: 'text-warning',
-  voting: 'text-error',
-  reveal: 'text-accent',
-  results: 'text-success',
+  lobby: 'bg-bg-tertiary border-border text-text-secondary',
+  assigning: 'bg-bg-tertiary border-border text-text-secondary',
+  clue: 'bg-accent-subtle border-text-primary/10 text-text-primary',
+  discussion: 'bg-warning/10 border-warning/20 text-warning',
+  voting: 'bg-error/10 border-error/20 text-error',
+  reveal: 'bg-accent-subtle border-text-primary/10 text-text-primary',
+  results: 'bg-success/10 border-success/20 text-success',
 }
 
 export function GameHeader({ roomCode, phase, round, playerCount }: GameHeaderProps) {
   return (
-    <header className="flex items-center justify-between px-6 py-3 border-b border-border">
+    <header className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-bg-secondary/20 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <span className="text-sm font-semibold tracking-tight text-text-primary">
+        <span className="text-sm font-black tracking-tight text-text-primary uppercase select-none">
           Echo
         </span>
-        <span className="h-3 w-px bg-border" />
-        <span className="text-xs font-mono tracking-wider text-text-secondary">
+        <span className="h-3.5 w-px bg-border/60" />
+        <span className="text-[11px] font-mono tracking-widest text-text-secondary uppercase select-all bg-bg-secondary px-2.5 py-1 rounded-lg border border-border/40">
           {roomCode}
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <motion.span
-          key={phase}
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn('text-xs font-medium', phaseColors[phase])}
-        >
-          {phaseLabels[phase]}
-        </motion.span>
+      <div className="flex items-center gap-3">
+        <AnimatePhaseBadge phase={phase} />
 
-        <span className="text-xs text-text-tertiary">
+        <span className="h-3.5 w-px bg-border/60" />
+
+        <span className="text-xs font-semibold font-mono text-text-secondary bg-bg-secondary px-2 py-0.5 rounded-md border border-border/40">
           R{round}
         </span>
 
-        <span className="text-xs text-text-tertiary">
-          {playerCount} player{playerCount !== 1 ? 's' : ''}
+        <span className="text-xs font-semibold text-text-secondary">
+          {playerCount} {playerCount === 1 ? 'Player' : 'Players'}
         </span>
       </div>
     </header>
+  )
+}
+
+function AnimatePhaseBadge({ phase }: { phase: GamePhase }) {
+  return (
+    <motion.span
+      key={phase}
+      initial={{ opacity: 0, y: -4, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className={cn(
+        'text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all duration-200',
+        phaseColors[phase]
+      )}
+    >
+      {phaseLabels[phase]}
+    </motion.span>
   )
 }

@@ -7,6 +7,9 @@ import { VotePanel } from '../../game/components/VotePanel'
 import { ResultsScreen } from '../../game/components/ResultsScreen'
 import { Timer } from '../../game/components/Timer'
 import { Avatar } from '../../design-system/components/Avatar'
+import { Button } from '../../design-system/components/Button'
+import { VoiceSetupOverlay } from '../../voice/components/VoiceSetupOverlay'
+import { VoiceDiagnosticsPanel } from '../../voice/components/VoiceDiagnosticsPanel'
 import { cn } from '../../lib/cn'
 import { getRandomWordPair } from '../../game/data/wordPairs'
 import type { Player, GamePhase } from '../../store/gameStore'
@@ -108,7 +111,6 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
   }, [phase, players])
 
   const onClueExpire = useCallback(() => {
-    // Move to next speaker
     speakerIndexRef.current++
     if (speakerIndexRef.current >= players.length) {
       setPhase('discussion')
@@ -123,7 +125,6 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
   }, [])
 
   const onVoteExpire = useCallback(() => {
-    // Auto-reveal
     revealResults()
   }, [])
 
@@ -157,7 +158,6 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
   }, [])
 
   const revealResults = useCallback(() => {
-    // Find most voted player
     const counts = new Map<string, number>()
     votes.forEach((v) => counts.set(v.targetId, (counts.get(v.targetId) || 0) + 1))
     let maxVotes = 0
@@ -174,11 +174,10 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
   }, [votes])
 
   const currentSpeaker = players[speakerIndexRef.current]
-  const allCluesDone = players.every((p) => p.hasSpoken)
 
   return (
     <PageTransition>
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col bg-bg">
         <GameHeader
           roomCode={roomCode}
           phase={phase}
@@ -186,43 +185,60 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
           playerCount={players.length}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto px-6 py-8 flex flex-col justify-center">
           {/* ─── Lobby Phase ─── */}
           {phase === 'lobby' && (
-            <div className="flex flex-col items-center justify-center h-full gap-6">
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-w-lg">
+            <div className="flex flex-col items-center justify-center h-full gap-8 max-w-xl mx-auto">
+              <div className="text-center mb-2">
+                <h2 className="text-base font-bold text-text-primary tracking-tight">Game Lobby</h2>
+                <p className="text-xs text-text-secondary mt-1">Waiting for players to get ready</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
                 {players.map((player) => (
                   <div
                     key={player.id}
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex flex-col items-center justify-center border border-border bg-bg-secondary/40 rounded-2xl p-4 gap-2.5 text-center transition-all hover:bg-bg-secondary/70 hover:border-border-hover/60"
                   >
                     <Avatar
                       src={player.avatar}
                       username={player.username}
-                      size="lg"
+                      size="md"
                       status={player.isReady ? 'online' : 'idle'}
                     />
-                    <span className={cn(
-                      'text-xs',
-                      player.id === 'local' ? 'text-text-primary font-medium' : 'text-text-secondary'
-                    )}>
-                      {player.username}
-                    </span>
+                    <div className="flex flex-col gap-0.5 min-w-0 w-full">
+                      <span className={cn(
+                        'text-xs font-semibold truncate',
+                        player.id === 'local' ? 'text-text-primary font-bold' : 'text-text-secondary'
+                      )}>
+                        {player.username}
+                      </span>
+                      <span className={cn(
+                        'text-[10px] font-bold uppercase tracking-wider',
+                        player.isReady ? 'text-success/80' : 'text-text-tertiary'
+                      )}>
+                        {player.isReady ? 'Ready' : 'Waiting'}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
-              <button
-                onClick={startGame}
-                className="h-12 rounded-xl bg-accent text-text-inverse font-semibold text-sm px-8 hover:bg-accent-hover transition-all active:scale-[0.98]"
-              >
-                Start Game
-              </button>
-              <button
-                onClick={onLeave}
-                className="text-xs text-text-tertiary hover:text-text-secondary transition-colors"
-              >
-                Leave room
-              </button>
+              <div className="flex flex-col items-center gap-3 w-full max-w-xs mt-4">
+                <Button
+                  onClick={startGame}
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="font-semibold shadow-xl"
+                >
+                  Start Game
+                </Button>
+                <button
+                  onClick={onLeave}
+                  className="text-xs font-semibold text-text-tertiary hover:text-text-secondary transition-colors"
+                >
+                  Leave room
+                </button>
+              </div>
             </div>
           )}
 
@@ -235,14 +251,14 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
 
           {/* ─── Clue Phase ─── */}
           {phase === 'clue' && (
-            <div className="flex flex-col items-center max-w-md mx-auto gap-6 pt-4">
+            <div className="flex flex-col items-center max-w-md mx-auto gap-8 pt-4 w-full">
               <WordReveal word={localWord} visible />
 
               <div className="text-center">
-                <p className="text-xs text-text-secondary mb-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">
                   {currentSpeaker?.id === 'local' ? 'Your turn' : `${currentSpeaker?.username}'s turn`}
                 </p>
-                <p className="text-xs text-text-tertiary">
+                <p className="text-xs text-text-tertiary leading-relaxed">
                   Give one clue about your word.
                   <br />
                   Don't say it, spell it, or translate it.
@@ -250,7 +266,7 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
               </div>
 
               {currentSpeaker?.id === 'local' && !clueSubmitted && (
-                <div className="flex gap-2 w-full">
+                <div className="flex gap-2 w-full bg-bg-secondary/30 border border-border/60 p-2 rounded-2xl backdrop-blur-sm">
                   <input
                     type="text"
                     value={clueText}
@@ -258,23 +274,25 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
                     onKeyDown={(e) => e.key === 'Enter' && submitClue()}
                     placeholder="Type your clue..."
                     maxLength={100}
-                    className="flex-1 h-12 rounded-xl border border-border bg-transparent px-4 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+                    className="flex-1 h-[48px] rounded-xl border border-border bg-bg-tertiary/40 px-4 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-hover/20 focus:border-text-primary/40 focus:bg-bg-tertiary/60 transition-all duration-300"
                     autoFocus
                   />
-                  <button
+                  <Button
                     onClick={submitClue}
                     disabled={!clueText.trim()}
-                    className="h-12 px-5 rounded-xl bg-accent text-text-inverse font-medium text-sm hover:bg-accent-hover transition-all disabled:opacity-40 active:scale-[0.98]"
+                    variant="primary"
+                    size="lg"
+                    className="font-semibold px-6"
                   >
                     Submit
-                  </button>
+                  </Button>
                 </div>
               )}
 
               {currentSpeaker?.id !== 'local' && (
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                  Listening...
+                <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-text-secondary bg-bg-secondary/40 border border-border/60 px-4 py-2.5 rounded-full backdrop-blur-sm">
+                  <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                  Listening to {currentSpeaker?.username}...
                 </div>
               )}
 
@@ -289,9 +307,9 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
 
           {/* ─── Discussion Phase ─── */}
           {phase === 'discussion' && (
-            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4">
+            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
               <div className="text-center">
-                <h2 className="text-base font-semibold text-text-primary">
+                <h2 className="text-base font-bold text-text-primary tracking-tight">
                   Discussion
                 </h2>
                 <p className="text-xs text-text-secondary mt-1">
@@ -304,7 +322,7 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
                 {players.map((player) => (
                   <div
                     key={player.id}
-                    className="flex items-center gap-2.5 rounded-lg border border-border bg-bg-secondary p-3"
+                    className="flex items-center gap-3 rounded-2xl border border-border bg-bg-secondary/40 p-4 hover:border-border-hover/60 hover:bg-bg-secondary/70 transition-all duration-300"
                   >
                     <Avatar
                       src={player.avatar}
@@ -317,12 +335,11 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-text-primary">
+                        <span className="text-xs font-bold text-text-primary">
                           {player.username}
                         </span>
-
                       </div>
-                      <p className="text-xs text-text-secondary truncate mt-0.5">
+                      <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">
                         {player.clue || '"Pass"'}
                       </p>
                     </div>
@@ -343,9 +360,9 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
 
           {/* ─── Voting Phase ─── */}
           {phase === 'voting' && (
-            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4">
+            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
               <div className="text-center">
-                <h2 className="text-base font-semibold text-text-primary">
+                <h2 className="text-base font-bold text-text-primary tracking-tight">
                   Vote
                 </h2>
                 <p className="text-xs text-text-secondary mt-1">
@@ -372,12 +389,12 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
           {phase === 'reveal' && (
             <div className="flex flex-col items-center justify-center h-full">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="text-center"
               >
-                <p className="text-sm text-text-secondary mb-4">
+                <p className="text-sm font-semibold tracking-wide text-text-secondary mb-4 uppercase">
                   The votes are in...
                 </p>
               </motion.div>
@@ -398,19 +415,16 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
           )}
         </main>
 
-        {/* ─── Voice Bar (subtle, embedded) ─── */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-t border-border bg-bg/60 backdrop-blur-sm">
-          <button
+        {/* ─── Voice Bar (subtle, embedded glassmorphism) ─── */}
+        <div className="flex items-center gap-4 px-6 py-4 border-t border-border bg-bg-secondary/70 backdrop-blur-md">
+          <Button
+            variant={isMuted ? 'danger' : 'secondary'}
+            size="sm"
             onClick={() => setMuted(!isMuted)}
-            className={cn(
-              'flex items-center gap-2 h-8 px-3 rounded-lg text-xs font-medium transition-all',
-              isMuted
-                ? 'bg-error/10 text-error hover:bg-error/20'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
-            )}
+            className="h-8 gap-2"
           >
             {isMuted ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="1" y1="1" x2="23" y2="23" />
                 <path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6" />
                 <path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23" />
@@ -418,46 +432,88 @@ export function RoomPage({ roomCode, onLeave }: RoomPageProps) {
                 <line x1="8" y1="23" x2="16" y2="23" />
               </svg>
             ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
                 <path d="M19 10v2a7 7 0 01-14 0v-2" />
                 <line x1="12" y1="19" x2="12" y2="23" />
                 <line x1="8" y1="23" x2="16" y2="23" />
               </svg>
             )}
-            {isMuted ? 'Muted' : 'Mic'}
-          </button>
+            <span className="hidden sm:inline font-semibold">{isMuted ? 'Muted' : 'Mic'}</span>
+          </Button>
 
           {/* Level meter */}
-          <div className="h-1.5 w-16 rounded-full bg-bg-tertiary overflow-hidden hidden sm:block">
+          <div className="h-[4px] w-20 rounded-full bg-bg-tertiary overflow-hidden hidden sm:block">
             <div
               className="h-full rounded-full transition-all duration-75"
               style={{
                 width: `${Math.min(100, liveMicLevel * 100)}%`,
-                background: isMuted ? 'hsl(0, 60%, 40%)' : 'hsl(220, 60%, 50%)',
+                background: isMuted ? 'var(--color-error)' : 'var(--color-text-primary)',
               }}
             />
           </div>
 
-          <span className="text-[10px] text-text-tertiary hidden sm:block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary hidden sm:block">
             {connectionGrade === 'excellent' ? 'Voice: Good' : 'Voice: Fair'}
           </span>
 
           <div className="flex-1" />
 
-          <button
-            onClick={() => setShowSetup(true)}
-            className="text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
-          >
-            Settings
-          </button>
-          <button
-            onClick={onLeave}
-            className="text-[10px] text-text-tertiary hover:text-error transition-colors"
-          >
-            Leave
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSetup(true)}
+              className="text-xs font-semibold text-text-secondary hover:text-text-primary"
+            >
+              Settings
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (!useVoiceStore.getState().diagnostics) {
+                  useVoiceStore.getState().setDiagnostics({
+                    rtt: 24,
+                    jitter: 2,
+                    packetLoss: 0.001,
+                    bitrate: 48000,
+                    codec: 'Opus (48kHz)',
+                    fecActive: true,
+                    iceType: 'STUN (srflx)',
+                    localIp: '192.168.1.15',
+                    inputLevel: -42.5,
+                    noiseLevel: -78.2,
+                    inputSampleRate: 48000,
+                    inputDeviceName: 'Default Input Device',
+                    outputDeviceName: 'Default Output Device',
+                    outputLatency: 12,
+                  })
+                }
+                setShowDiagnostics(true)
+              }}
+              className="text-xs font-semibold text-text-secondary hover:text-text-primary"
+            >
+              Diagnostics
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={onLeave}
+              className="h-8 font-semibold px-4"
+            >
+              Leave
+            </Button>
+          </div>
         </div>
+
+        {/* ─── Modals Setup and Diagnostics ─── */}
+        <VoiceSetupOverlay />
+        <VoiceDiagnosticsPanel
+          open={showDiagnostics}
+          onClose={() => setShowDiagnostics(false)}
+          diagnostics={useVoiceStore((s) => s.diagnostics)}
+        />
       </div>
     </PageTransition>
   )

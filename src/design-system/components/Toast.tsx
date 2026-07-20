@@ -40,10 +40,10 @@ const icons: Record<ToastVariant, React.ReactNode> = {
 }
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: 'border-success/30 text-success',
-  error: 'border-error/30 text-error',
-  info: 'border-accent/30 text-accent',
-  warning: 'border-warning/30 text-warning',
+  success: 'border-success/20 text-success',
+  error: 'border-error/20 text-error',
+  info: 'border-border/60 text-text-secondary',
+  warning: 'border-warning/20 text-warning',
 }
 
 export function Toast({ toast, onDismiss }: ToastProps) {
@@ -54,30 +54,30 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.95 }}
+      initial={{ opacity: 0, y: 12, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
+      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'flex items-center gap-3 rounded-lg border bg-bg-elevated px-4 py-3 shadow-lg',
+        'flex items-center gap-3 rounded-xl border bg-bg-elevated/95 px-4 py-3.5 shadow-2xl backdrop-blur-xl',
         variantStyles[toast.variant]
       )}
     >
       <span className="shrink-0">{icons[toast.variant]}</span>
-      <span className="flex-1 text-sm text-text-primary">{toast.message}</span>
+      <span className="flex-1 text-sm text-text-primary font-medium">{toast.message}</span>
       {toast.action && (
         <button
           onClick={toast.action.onClick}
-          className="shrink-0 text-xs font-medium text-accent hover:text-accent-hover"
+          className="shrink-0 text-xs font-semibold text-text-primary hover:text-text-secondary transition-colors"
         >
           {toast.action.label}
         </button>
       )}
       <button
         onClick={() => onDismiss(toast.id)}
-        className="shrink-0 text-text-tertiary hover:text-text-secondary"
+        className="shrink-0 text-text-tertiary hover:text-text-secondary p-1 rounded-lg hover:bg-bg-tertiary/50 transition-colors"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 6L6 18" /><path d="M6 6l12 12" />
         </svg>
       </button>
@@ -93,7 +93,7 @@ export function ToastContainer({
   onDismiss: (id: string) => void
 }) {
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-toast flex flex-col gap-2 w-full max-w-sm px-4">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-toast flex flex-col gap-2 w-full max-w-sm px-4">
       <AnimatePresence mode="popLayout">
         {toasts.map((t) => (
           <Toast key={t.id} toast={t} onDismiss={onDismiss} />

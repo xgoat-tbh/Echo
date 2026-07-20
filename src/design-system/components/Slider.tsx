@@ -54,18 +54,18 @@ export function Slider({
   )
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="group flex items-center gap-3 w-full">
       {icon && (
-        <span className="shrink-0 text-text-secondary">{icon}</span>
+        <span className="shrink-0 text-text-secondary group-hover:text-text-primary transition-colors">{icon}</span>
       )}
       <div className="flex-1 min-w-0">
         {label && (
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-medium text-text-primary">
+            <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
               {label}
             </span>
             {showValue && (
-              <span className="text-xs text-text-secondary tabular-nums">
+              <span className="text-[11px] font-mono text-text-tertiary group-hover:text-text-secondary transition-colors tabular-nums">
                 {value}
               </span>
             )}
@@ -73,15 +73,15 @@ export function Slider({
         )}
         <div
           ref={trackRef}
-          className="relative h-1.5 cursor-pointer rounded-full bg-bg-tertiary"
+          className="relative h-[4px] cursor-pointer rounded-full bg-bg-tertiary/60 transition-colors"
           onPointerDown={handlePointerDown}
         >
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-accent pointer-events-none"
+            className="absolute inset-y-0 left-0 rounded-full bg-text-primary pointer-events-none"
             style={{ width: `${pct}%` }}
           />
           <div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow-sm pointer-events-none transition-transform hover:scale-125 active:scale-125"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-[12px] w-[12px] rounded-full bg-text-primary border border-transparent shadow-[0_1px_4px_rgba(0,0,0,0.6)] pointer-events-none transition-transform duration-100 ease-out scale-100 group-hover:scale-[1.2] active:scale-[1.0]"
             style={{ left: `${pct}%` }}
           />
         </div>

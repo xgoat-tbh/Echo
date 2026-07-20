@@ -24,18 +24,18 @@ export function PlayerGrid({
 
   if (players.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="h-12 w-12 rounded-full bg-bg-tertiary flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center py-16 px-6 gap-4 border border-border/60 bg-bg-secondary/20 rounded-2xl max-w-sm mx-auto text-center backdrop-blur-sm">
+        <div className="h-12 w-12 rounded-full bg-bg-tertiary/60 border border-border/60 flex items-center justify-center">
           <svg
-            width="24"
-            height="24"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-text-tertiary"
+            className="text-text-secondary"
           >
             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
             <circle cx="9" cy="7" r="4" />
@@ -43,8 +43,8 @@ export function PlayerGrid({
             <path d="M16 3.13a4 4 0 010 7.75" />
           </svg>
         </div>
-        <p className="text-sm text-text-secondary">
-          Waiting for players to join...
+        <p className="text-xs font-semibold text-text-secondary">
+          Waiting for other players to join the call...
         </p>
       </div>
     )

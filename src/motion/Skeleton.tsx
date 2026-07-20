@@ -9,9 +9,9 @@ interface SkeletonProps {
 export function Skeleton({ className, style }: SkeletonProps) {
   return (
     <motion.div
-      className={cn('rounded-md bg-bg-tertiary', className)}
+      className={cn('rounded-md bg-bg-tertiary/65', className)}
       style={style}
-      animate={{ opacity: [0.4, 0.7, 0.4] }}
+      animate={{ opacity: [0.35, 0.6, 0.35] }}
       transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
     />
   )
@@ -19,15 +19,15 @@ export function Skeleton({ className, style }: SkeletonProps) {
 
 export function PlayerCardSkeleton() {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-bg-secondary p-4">
+    <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-bg-secondary/40 p-5 backdrop-blur-sm">
       <div className="flex items-center gap-3">
         <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="flex flex-col gap-1.5 flex-1">
-          <Skeleton className="h-3.5 w-24" />
-          <Skeleton className="h-3 w-16" />
+        <div className="flex flex-col gap-2 flex-1">
+          <Skeleton className="h-3 w-20 rounded" />
+          <Skeleton className="h-2.5 w-14 rounded" />
         </div>
       </div>
-      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-[28px] w-full rounded-lg mt-1" />
     </div>
   )
 }

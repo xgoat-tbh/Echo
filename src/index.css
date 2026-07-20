@@ -1,32 +1,36 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-bg: hsl(220, 15%, 8%);
-  --color-bg-secondary: hsl(220, 12%, 12%);
-  --color-bg-tertiary: hsl(220, 10%, 16%);
-  --color-bg-elevated: hsl(220, 12%, 18%);
+  --color-bg: hsl(240, 10%, 4%);
+  --color-bg-secondary: hsl(240, 6%, 7%);
+  --color-bg-tertiary: hsl(240, 5%, 11%);
+  --color-bg-elevated: hsl(240, 5%, 15%);
 
-  --color-border: hsl(220, 8%, 24%);
-  --color-border-hover: hsl(220, 8%, 32%);
-  --color-border-active: hsl(220, 60%, 50%);
+  --color-border: hsla(240, 5%, 90%, 0.08);
+  --color-border-hover: hsla(240, 5%, 90%, 0.16);
+  --color-border-active: hsla(240, 5%, 90%, 0.28);
 
-  --color-text-primary: hsl(220, 15%, 92%);
-  --color-text-secondary: hsl(220, 10%, 65%);
-  --color-text-tertiary: hsl(220, 8%, 45%);
-  --color-text-inverse: hsl(220, 15%, 8%);
+  --color-text-primary: hsl(0, 0%, 98%);
+  --color-text-secondary: hsl(240, 4%, 64%);
+  --color-text-tertiary: hsl(240, 4%, 42%);
+  --color-text-inverse: hsl(240, 10%, 4%);
 
-  --color-accent: hsl(220, 70%, 55%);
-  --color-accent-hover: hsl(220, 70%, 60%);
-  --color-accent-subtle: hsla(220, 70%, 55%, 0.12);
+  --color-accent: hsl(0, 0%, 98%);
+  --color-accent-hover: hsl(240, 5%, 88%);
+  --color-accent-subtle: hsla(0, 0%, 98%, 0.08);
 
-  --color-success: hsl(142, 70%, 50%);
-  --color-warning: hsl(45, 90%, 50%);
-  --color-error: hsl(0, 80%, 55%);
+  --color-success: hsl(142, 60%, 45%);
+  --color-warning: hsl(47, 95%, 45%);
+  --color-error: hsl(358, 75%, 50%);
 
-  --color-speaking-glow: hsla(220, 70%, 60%, 0.3);
+  --color-speaking-glow: hsla(142, 60%, 45%, 0.15);
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  --z-modal: 100;
+  --z-toast: 110;
+  --z-dropdown: 50;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -37,12 +41,14 @@
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
+    border-color: var(--color-border);
   }
 
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    background: var(--color-bg);
   }
 
   body {
@@ -51,11 +57,12 @@
     background: var(--color-bg);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.6;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+    letter-spacing: -0.011em;
   }
 
   #root {
@@ -64,7 +71,8 @@
   }
 
   input, select, button, textarea {
-    font-size: 16px;
+    font-size: 15px;
+    font-family: inherit;
   }
 
   ::selection {
@@ -73,7 +81,8 @@
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   ::-webkit-scrollbar-track {
@@ -81,17 +90,22 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 3px;
+    background: hsla(240, 5%, 90%, 0.12);
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsla(240, 5%, 90%, 0.2);
   }
 }
 
 @keyframes pulse-skeleton {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
 }
 
 @keyframes speaking-glow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.5; }
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
 }
+

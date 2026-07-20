@@ -22,17 +22,17 @@ interface ButtonProps {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-text-inverse hover:bg-accent-hover',
-  secondary: 'border border-border text-text-primary hover:bg-bg-tertiary',
-  ghost: 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
-  danger: 'bg-error text-white hover:brightness-110',
-  icon: 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
+  primary: 'bg-text-primary text-bg font-semibold hover:bg-accent-hover shadow-[0_1px_3px_rgba(0,0,0,0.4)] border border-transparent',
+  secondary: 'border border-border/80 bg-bg-secondary/40 text-text-primary hover:bg-bg-tertiary/80 hover:border-border-hover/80 backdrop-blur-sm',
+  ghost: 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50',
+  danger: 'bg-error/12 border border-error/20 text-error hover:bg-error/20 hover:border-error/30',
+  icon: 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50 border border-transparent',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-6 text-base gap-2.5',
+  sm: 'h-[32px] px-3.5 text-xs gap-1.5 rounded-lg tracking-wide',
+  md: 'h-[40px] px-5 text-sm gap-2 rounded-xl tracking-normal',
+  lg: 'h-[48px] px-6 text-[15px] gap-2.5 rounded-xl tracking-normal',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -57,28 +57,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         whileHover={
-          !disabled && variant !== 'icon'
-            ? { scale: 1.02 }
+          !disabled
+            ? { y: -1, scale: 1.01, transition: { type: 'spring', stiffness: 400, damping: 15 } }
             : undefined
         }
         whileTap={
           !disabled
-            ? { scale: variant === 'icon' ? 0.9 : 0.98 }
+            ? { scale: 0.97, y: 0, transition: { type: 'spring', stiffness: 500, damping: 20 } }
             : undefined
         }
-        transition={{
-          duration: MotionTiming.fast / 1000,
-          ease: [0.34, 1.56, 0.64, 1],
-        }}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-          'disabled:opacity-40 disabled:pointer-events-none',
-          'select-none',
+          'inline-flex items-center justify-center font-medium transition-colors select-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-hover/40 focus-visible:border-accent-hover/60',
+          'disabled:opacity-30 disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],
           variant !== 'icon' && fullWidth && 'w-full',
-          variant === 'icon' && 'h-8 w-8 p-0 rounded-md',
+          variant === 'icon' && 'h-8 w-8 p-0 rounded-lg flex items-center justify-center',
           className
         )}
         disabled={disabled || loading}
@@ -86,7 +81,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading ? (
           <svg
-            className="h-4 w-4 animate-spin"
+            className="h-3.5 w-3.5 animate-spin"
             viewBox="0 0 24 24"
             fill="none"
           >

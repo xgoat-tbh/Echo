@@ -58,19 +58,19 @@ export function Timer({ durationSeconds, running, onExpire, paused }: TimerProps
   const urgent = remaining <= 10
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 rounded-full bg-bg-tertiary overflow-hidden">
+    <div className="flex items-center gap-3 bg-bg-secondary border border-border/60 px-3.5 py-1.5 rounded-full backdrop-blur-sm shadow-sm select-none">
+      <div className="h-[4px] w-20 rounded-full bg-bg-tertiary overflow-hidden">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-1000 linear',
-            urgent ? 'bg-error' : 'bg-accent'
+            urgent ? 'bg-error' : 'bg-text-primary'
           )}
           style={{ width: `${pct * 100}%` }}
         />
       </div>
       <span
         className={cn(
-          'text-xs font-mono tabular-nums',
+          'text-xs font-mono font-bold tabular-nums tracking-wide',
           urgent ? 'text-error' : 'text-text-secondary'
         )}
       >

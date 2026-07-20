@@ -61,29 +61,32 @@ export function MicrophoneTest({
   }, [recording, onTestPlayback])
 
   return (
-    <div className="rounded-lg border border-border bg-bg-tertiary/50 p-4 space-y-3">
+    <div className="rounded-xl border border-border bg-bg-secondary/40 p-4 space-y-4 backdrop-blur-sm">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-text-primary">Microphone Test</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Microphone Test</span>
         <Button
           variant="secondary"
           size="sm"
           onClick={handleTest}
           loading={recording}
+          className="font-semibold text-xs"
         >
           {playing ? 'Playing...' : recording ? 'Recording...' : 'Test Microphone'}
         </Button>
       </div>
 
-      <LevelMeter level={liveLevel} showLabel />
+      <div className="bg-bg-tertiary/40 border border-border/60 rounded-lg p-2 flex items-center justify-center">
+        <LevelMeter level={liveLevel} showLabel width={160} />
+      </div>
 
       {latency !== null && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary">Estimated latency</span>
-          <span className="text-xs text-text-primary font-mono tabular-nums">
+        <div className="flex items-center gap-2 border-t border-border/40 pt-2 text-[11px]">
+          <span className="text-text-secondary font-medium">Estimated Latency</span>
+          <span className="text-text-primary font-mono font-bold">
             {latency} ms
           </span>
           <span
-            className={`text-xs ${
+            className={`font-semibold uppercase tracking-wide text-[9px] ${
               latency < 30 ? 'text-success' : latency < 60 ? 'text-warning' : 'text-error'
             }`}
           >
