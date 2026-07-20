@@ -1,22 +1,17 @@
 services:
   - type: web
-    name: voice-server
+    name: echo-server
     env: node
     region: oregon
     plan: starter
     buildCommand: cd server && npm install
-    startCommand: cd server && node --experimental-vm-modules src/index.ts
+    startCommand: cd server && npx tsx src/index.ts
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: PORT
         value: "4000"
-      - key: NUM_WORKERS
-        value: "2"
-      # Render auto-injects RENDER_EXTERNAL_HOSTNAME — used as announced SFU IP
-      - key: SFU_IP
-        value: ""  # Falls back to RENDER_EXTERNAL_HOSTNAME, then 127.0.0.1
-      # TURN relay: REQUIRED on Render (no host-networking / UDP ports exposed)
+      # TURN relay for P2P WebRTC voice (required on Render — no UDP host networking)
       - key: TURN_URLS
         value: ""
       - key: TURN_USERNAME
