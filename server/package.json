@@ -10,12 +10,15 @@
     "start:dev": "node --experimental-vm-modules src/index.ts"
   },
   "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "mediasoup": "^3.15.0",
+    "socket.io": "^4.8.3",
     "tsx": "^4.23.1",
-    "uuid": "^11.1.0",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
     "@types/uuid": "^10.0.0",
     "typescript": "~6.0.2"

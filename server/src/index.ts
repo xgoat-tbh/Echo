@@ -1,36 +1,114 @@
-import { createWorker } from 'mediasoup'
-import { createApp } from './app.js'
+import express from 'express'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+import cors from 'cors'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import https from 'https'
+import http from 'http'
 
-const PORT = parseInt(process.env.PORT || '4000', 10)
-const NUM_WORKERS = parseInt(process.env.NUM_WORKERS || '1', 10)
+import {
+  setIO,
+  handleCreateRoom,
+  handleJoinRoom,
+  handleToggleReady,
+  handleStartGame,
+  handleSubmitClue,
+  handleCastVote,
+  handlePlayAgain,
+  handleToggleMute,
+  handleDisconnect,
+} from './game.js'
 
-async function main() {
-  const workers = await Promise.all(
-    Array.from({ length: NUM_WORKERS }, () => createWorker({
-      logLevel: 'warn',
-      rtcMinPort: 40000,
-      rtcMaxPort: 49999,
-    }))
-  )
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-  console.log(`Started ${workers.length} mediasoup worker(s)`)
+const app = express()
+app.use(cors())
 
-  let workerIndex = 0
-  const getWorker = () => {
-    const worker = workers[workerIndex % workers.length]
-    workerIndex++
-    return worker
-  }
-
-  const app = createApp(getWorker)
-  app.listen(PORT, (token) => {
-    if (token) {
-      console.log(`Server listening on port ${PORT}`)
-    }
+const distPath = path.join(__dirname, '../../dist')
+app.use(express.static(distPath))
+// SPA fallback — must match any non-API path
+app.use((req, res, next) => {
+  if (req.path.startsWith('/socket.io') || req.path.startsWith('/api')) return next()
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) next()
   })
+})
+
+const httpServer = createServer(app)
+const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+})
+
+setIO(io)
+
+function startKeepAlive() {
+  const url = process.env.RENDER_EXTERNAL_URL
+  if (!url) return
+  setInterval(() => {
+    const client = url.startsWith('https') ? https : http
+    client.get(url, (res) => {
+      console.log(`Keep-alive ping. Status: ${res.statusCode}`)
+    }).on('error', (err) => {
+      console.error(`Keep-alive failed: ${err.message}`)
+    })
+  }, 10 * 60 * 1000)
 }
 
-main().catch((err) => {
-  console.error('Fatal error:', err)
-  process.exit(1)
+io.on('connection', (socket) => {
+  socket.on('create_room', (nickname) => {
+    handleCreateRoom(socket.id, nickname)
+  })
+
+  socket.on('join_room', ({ code, nickname }) => {
+    handleJoinRoom(socket.id, code, nickname)
+  })
+
+  socket.on('toggle_ready', () => {
+    handleToggleReady(socket.id)
+  })
+
+  socket.on('start_game', () => {
+    handleStartGame(socket.id)
+  })
+
+  socket.on('submit_clue', ({ clue }) => {
+    handleSubmitClue(socket.id, clue)
+  })
+
+  socket.on('cast_vote', ({ targetId }) => {
+    handleCastVote(socket.id, targetId)
+  })
+
+  socket.on('play_again', () => {
+    handlePlayAgain(socket.id)
+  })
+
+  socket.on('toggle_mute', (isMuted) => {
+    handleToggleMute(socket.id, isMuted)
+  })
+
+  // Voice P2P signaling relay
+  socket.on('voice_offer', ({ targetId, offer }) => {
+    io.to(targetId).emit('voice_offer', { senderId: socket.id, offer })
+  })
+
+  socket.on('voice_answer', ({ targetId, answer }) => {
+    io.to(targetId).emit('voice_answer', { senderId: socket.id, answer })
+  })
+
+  socket.on('ice_candidate', ({ targetId, candidate }) => {
+    io.to(targetId).emit('ice_candidate', { senderId: socket.id, candidate })
+  })
+
+  socket.on('disconnect', () => {
+    handleDisconnect(socket.id)
+  })
+})
+
+const PORT = parseInt(process.env.PORT || '4000', 10)
+httpServer.listen(PORT, () => {
+  console.log(`Echo server running on port ${PORT}`)
+  startKeepAlive()
 })

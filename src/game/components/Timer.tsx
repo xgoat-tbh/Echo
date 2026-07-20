@@ -3,8 +3,8 @@ import { cn } from '../../lib/cn'
 
 interface TimerProps {
   durationSeconds: number
-  running: boolean
-  onExpire: () => void
+  running?: boolean
+  onExpire?: () => void
   paused?: boolean
 }
 
@@ -36,7 +36,7 @@ export function Timer({ durationSeconds, running, onExpire, paused }: TimerProps
           }
           if (!expiredRef.current) {
             expiredRef.current = true
-            onExpire()
+            onExpire?.()
           }
           return 0
         }
