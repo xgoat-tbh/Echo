@@ -64,7 +64,7 @@ export class Room {
     })
   }
 
-  async createTransport(peerId: string): Promise<mediasoup.types.WebRtcTransportOptions> {
+  async createTransport(peerId: string): Promise<any> {
     const peer = this.peers.get(peerId)
     if (!peer) throw new Error('Peer not found')
 
@@ -74,7 +74,6 @@ export class Room {
       enableTcp: true,
       preferUdp: true,
       initialAvailableOutgoingBitrate: 1_000_000,
-      minimumAvailableOutgoingBitrate: 600_000,
     })
 
     peer.transport = transport
@@ -114,7 +113,7 @@ export class Room {
       const consumer = await otherPeer.transport.consume({
         producerId: producer.id,
         rtpParameters: producer.rtpParameters,
-      })
+      } as any)
 
       otherPeer.consumers.set(producer.id, consumer)
 

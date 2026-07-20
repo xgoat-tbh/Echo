@@ -6,7 +6,7 @@ import type { SignalMessage } from './protocol.js'
 import { v4 as uuidv4 } from 'uuid'
 
 interface PeerConnection {
-  ws: uWS.WebSocket
+  ws: uWS.WebSocket<any>
   userId: string
   username: string
   roomId: string | null
@@ -231,6 +231,17 @@ export function createApp(getWorker: () => mediasoup.types.Worker) {
                 timestamp: Date.now(),
                 id: uuidv4(),
               }, conn.userId)
+              break
+            }
+
+            case SignalMessageType.GAME_START:
+            case SignalMessageType.GAME_CLUE:
+            case SignalMessageType.GAME_VOTE:
+            case SignalMessageType.GAME_READY:
+            case SignalMessageType.GAME_SYNC: {
+              if (!conn?.roomId) return
+              const room = rooms.get(conn.roomId)
+              room?.broadcast(msg, conn.userId)
               break
             }
           }

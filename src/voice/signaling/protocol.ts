@@ -18,6 +18,11 @@ export enum SignalMessageType {
   PEER_MUTED = 'peer:muted',
   PEER_DEVICE_CHANGE = 'peer:device:change',
   RECONNECT = 'reconnect',
+  GAME_START = 'game:start',
+  GAME_CLUE = 'game:clue',
+  GAME_VOTE = 'game:vote',
+  GAME_READY = 'game:ready',
+  GAME_SYNC = 'game:sync',
 }
 
 export interface SignalMessage {

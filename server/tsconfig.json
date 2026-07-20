@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "module": "esnext",
+    "module": "NodeNext",
     "lib": ["ES2023"],
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
     "strict": true,
     "skipLibCheck": true,
-    "erasableSyntaxOnly": true,
-    "outDir": "dist"
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": ["src"]
 }
