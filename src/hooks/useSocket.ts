@@ -56,6 +56,7 @@ export function useSocket() {
     const socket = io(serverUrl, {
       transports: ['polling', 'websocket'],
       timeout: 30000,
+      withCredentials: false,
     })
     socketRef.current = socket
 
@@ -78,7 +79,8 @@ export function useSocket() {
 
     socket.on('connect_error', (err) => {
       const msg = err.message || 'unknown error'
-      setConnectError(`Connection failed: ${msg}`)
+      const desc = (err as any).description
+      setConnectError(`Connection failed: ${msg}${desc ? ` (${desc})` : ''}`)
       // Socket.io will retry with polling fallback automatically
     })
 

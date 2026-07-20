@@ -1,1 +1,0 @@
-Fix Socket.io transport order - use polling first, upgrade to websocket
