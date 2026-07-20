@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare } from 'lucide-react'
+import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare, Link2 } from 'lucide-react'
 import { useSocket, type Player } from './hooks/useSocket'
 import { PageTransition } from './motion/PageTransition'
 import { GameHeader } from './game/components/GameHeader'
@@ -640,8 +640,8 @@ export default function App() {
                         {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5 text-text-tertiary" />}
                       </button>
                       {isHost && (
-                        <button onClick={() => { const url = `${window.location.origin}?spectate=${code}`; navigator.clipboard.writeText(url); setSpectatorCopied(true); setTimeout(() => setSpectatorCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy spectator link">
-                          {spectatorCopied ? <Check className="w-3.5 h-3.5 text-success" /> : <LogOut className="w-3.5 h-3.5 text-text-tertiary" />}
+                        <button onClick={() => { const url = `${window.location.origin}?spectate=${code}`; navigator.clipboard.writeText(url); setSpectatorCopied(true); setTimeout(() => setSpectatorCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy spectator watch link">
+                          {spectatorCopied ? <Check className="w-3.5 h-3.5 text-success" /> : <Link2 className="w-3.5 h-3.5 text-text-tertiary" />}
                         </button>
                       )}
                     </div>
