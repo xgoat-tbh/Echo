@@ -42,8 +42,8 @@ export function useSocket() {
   const [roomState, setRoomState] = useState<RoomState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [connectError, setConnectError] = useState<string | null>(null)
 
-  // Voice P2P signaling state
   const [voiceOffer, setVoiceOffer] = useState<{ senderId: string; offer: any } | null>(null)
   const [voiceAnswer, setVoiceAnswer] = useState<{ senderId: string; answer: any } | null>(null)
   const [iceCandidate, setIceCandidate] = useState<{ senderId: string; candidate: any } | null>(null)
@@ -51,27 +51,38 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
-    const serverUrl = import.meta.env.VITE_BACKEND_URL || window.location.origin
+    const serverUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_WS_URL?.replace(/^ws/, 'http') || window.location.origin
 
-    const socket = io(serverUrl)
+    const socket = io(serverUrl, {
+      transports: ['websocket', 'polling'],
+    })
     socketRef.current = socket
 
     socket.on('connect', () => {
       setIsConnected(true)
+      setConnectError(null)
       setError(null)
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
       setIsConnected(false)
       setRoomState(null)
       setVoiceOffer(null)
       setVoiceAnswer(null)
       setIceCandidate(null)
+      if (reason !== 'io client disconnect') {
+        setConnectError(`Disconnected: ${reason}`)
+      }
+    })
+
+    socket.on('connect_error', (err) => {
+      setConnectError(`Connection failed: ${err.message}`)
     })
 
     socket.on('room_updated', (state: RoomState) => {
       setRoomState(state)
       setError(null)
+      setConnectError(null)
     })
 
     socket.on('game_error', (msg: string) => {
@@ -97,68 +108,67 @@ export function useSocket() {
   }, [])
 
   const createRoom = useCallback((nickname: string) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('create_room', nickname)
     }
   }, [])
 
   const joinRoom = useCallback((code: string, nickname: string) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('join_room', { code, nickname })
     }
   }, [])
 
   const toggleReady = useCallback(() => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('toggle_ready')
     }
   }, [])
 
   const startGame = useCallback(() => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('start_game')
     }
   }, [])
 
   const submitClue = useCallback((clue: string) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('submit_clue', { clue })
     }
   }, [])
 
   const castVote = useCallback((targetId: string) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('cast_vote', { targetId })
     }
   }, [])
 
   const playAgain = useCallback(() => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('play_again')
     }
   }, [])
 
   const toggleMute = useCallback((isMuted: boolean) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('toggle_mute', isMuted)
     }
   }, [])
 
-  // Voice P2P relays
   const relayVoiceOffer = useCallback((targetId: string, offer: any) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('voice_offer', { targetId, offer })
     }
   }, [])
 
   const relayVoiceAnswer = useCallback((targetId: string, answer: any) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('voice_answer', { targetId, answer })
     }
   }, [])
 
   const relayIceCandidate = useCallback((targetId: string, candidate: any) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('ice_candidate', { targetId, candidate })
     }
   }, [])
@@ -168,6 +178,7 @@ export function useSocket() {
     roomState,
     error,
     isConnected,
+    connectError,
     voiceOffer,
     voiceAnswer,
     iceCandidate,

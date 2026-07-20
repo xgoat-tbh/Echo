@@ -3,6 +3,7 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import https from 'https'
 import http from 'http'
@@ -26,14 +27,21 @@ const __dirname = path.dirname(__filename)
 const app = express()
 app.use(cors())
 
+// Serve client static files if they exist (for single-server deploys)
 const distPath = path.join(__dirname, '../../dist')
-app.use(express.static(distPath))
-// SPA fallback — must match any non-API path
-app.use((req, res, next) => {
-  if (req.path.startsWith('/socket.io') || req.path.startsWith('/api')) return next()
-  res.sendFile(path.join(distPath, 'index.html'), (err) => {
-    if (err) next()
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/socket.io') || req.path.startsWith('/api')) return next()
+    res.sendFile(path.join(distPath, 'index.html'), (err) => {
+      if (err) next()
+    })
   })
+}
+
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() })
 })
 
 const httpServer = createServer(app)

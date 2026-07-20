@@ -12,7 +12,7 @@ import { cn } from './lib/cn'
 import { config } from './config'
 
 export default function App() {
-  const { roomState, error, isConnected, voiceOffer, voiceAnswer, iceCandidate, actions, socket } = useSocket()
+  const { roomState, error, isConnected, connectError, voiceOffer, voiceAnswer, iceCandidate, actions, socket } = useSocket()
 
   const [nickname, setNickname] = useState('')
   const [roomCodeInput, setRoomCodeInput] = useState('')
@@ -211,12 +211,28 @@ export default function App() {
                 <span className="text-text-tertiary">Can you find the Echo?</span>
               </motion.p>
 
+              {/* ─── Connection Status ─── */}
+              {connectError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 w-full max-w-[400px] px-4 py-2.5 rounded-xl text-xs font-semibold text-center text-error bg-error/10 border border-error/20"
+                >
+                  {connectError}
+                </motion.div>
+              )}
+              {!isConnected && !connectError && (
+                <div className="mb-4 w-full max-w-[400px] px-4 py-2.5 rounded-xl text-xs font-semibold text-center text-text-tertiary bg-bg-tertiary/30 border border-border/40">
+                  Connecting to server...
+                </div>
+              )}
+
               {/* ─── Form Card ─── */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 w-full max-w-[400px] surface-elevated rounded-2xl p-5"
+                className="mt-1 w-full max-w-[400px] surface-elevated rounded-2xl p-5"
               >
                 <AnimatePresence mode="wait">
                   {!isJoining ? (
@@ -246,14 +262,15 @@ export default function App() {
                       <div className="flex gap-2.5 pt-1">
                         <button
                           type="submit"
-                          disabled={!nickname.trim()}
+                          disabled={!nickname.trim() || !isConnected}
                           className="flex-1 btn-primary"
                         >
-                          Create Room
+                          {isConnected ? 'Create Room' : 'Connecting...'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsJoining(true)}
+                          disabled={!isConnected}
                           className="flex-1 btn-secondary"
                         >
                           Join Room
@@ -308,10 +325,10 @@ export default function App() {
                         </button>
                         <button
                           type="submit"
-                          disabled={!nickname.trim() || !roomCodeInput.trim()}
-                          className="flex-1 btn-primary"
+                          disabled={!nickname.trim() || !roomCodeInput.trim() || !isConnected}
+                          className="flex-1 btn-primary px-5"
                         >
-                          Join
+                          {isConnected ? 'Join' : 'Connecting...'}
                         </button>
                       </div>
                     </motion.form>
