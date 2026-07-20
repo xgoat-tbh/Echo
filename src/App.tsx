@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare, Link2, Sun, Moon } from 'lucide-react'
+import { Analytics } from '@vercel/analytics/react'
 import { useSocket, type Player } from './hooks/useSocket'
 import { PageTransition } from './motion/PageTransition'
 import { GameHeader } from './game/components/GameHeader'
@@ -1534,6 +1535,7 @@ export default function App() {
           onSubmit={(pairs) => actions.setCustomWords(pairs)}
           currentPairs={0}
         />
+        <Analytics />
       </div>
     </PageTransition>
   )
