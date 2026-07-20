@@ -69,8 +69,8 @@ export function Avatar({
           />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center bg-accent-subtle text-sm font-semibold text-accent"
-            style={{ fontSize: px * 0.35 }}
+            className="flex h-full w-full items-center justify-center bg-bg-tertiary/60 text-text-secondary font-medium"
+            style={{ fontSize: px * 0.34 }}
           >
             {initials}
           </div>

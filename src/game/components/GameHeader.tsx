@@ -11,7 +11,7 @@ interface GameHeaderProps {
 
 const phaseLabels: Record<GamePhase, string> = {
   lobby: 'Lobby',
-  assigning: 'Assigning Words',
+  assigning: 'Assigning',
   clue: 'Clue Phase',
   discussion: 'Discussion',
   voting: 'Voting',
@@ -20,24 +20,24 @@ const phaseLabels: Record<GamePhase, string> = {
 }
 
 const phaseColors: Record<GamePhase, string> = {
-  lobby: 'bg-bg-tertiary border-border text-text-secondary',
-  assigning: 'bg-bg-tertiary border-border text-text-secondary',
-  clue: 'bg-accent-subtle border-text-primary/10 text-text-primary',
-  discussion: 'bg-warning/10 border-warning/20 text-warning',
-  voting: 'bg-error/10 border-error/20 text-error',
-  reveal: 'bg-accent-subtle border-text-primary/10 text-text-primary',
-  results: 'bg-success/10 border-success/20 text-success',
+  lobby: 'text-text-tertiary',
+  assigning: 'text-text-tertiary',
+  clue: 'text-text-primary',
+  discussion: 'text-warning',
+  voting: 'text-error',
+  reveal: 'text-text-primary',
+  results: 'text-success',
 }
 
 export function GameHeader({ roomCode, phase, round, playerCount }: GameHeaderProps) {
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-bg-secondary/20 backdrop-blur-sm">
+    <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-bg-secondary/30 backdrop-blur-xl">
       <div className="flex items-center gap-3">
-        <span className="text-sm font-black tracking-tight text-text-primary uppercase select-none">
+        <span className="text-[13px] font-bold tracking-[-0.02em] text-text-primary uppercase select-none">
           Echo
         </span>
-        <span className="h-3.5 w-px bg-border/60" />
-        <span className="text-[11px] font-mono tracking-widest text-text-secondary uppercase select-all bg-bg-secondary px-2.5 py-1 rounded-lg border border-border/40">
+        <span className="h-3 w-px bg-border" />
+        <span className="text-[11px] font-mono tracking-[0.15em] text-text-secondary select-all px-2 py-0.5 rounded-md bg-bg-tertiary/40">
           {roomCode}
         </span>
       </div>
@@ -45,14 +45,14 @@ export function GameHeader({ roomCode, phase, round, playerCount }: GameHeaderPr
       <div className="flex items-center gap-3">
         <AnimatePhaseBadge phase={phase} />
 
-        <span className="h-3.5 w-px bg-border/60" />
+        <span className="h-3 w-px bg-border" />
 
-        <span className="text-xs font-semibold font-mono text-text-secondary bg-bg-secondary px-2 py-0.5 rounded-md border border-border/40">
+        <span className="text-[11px] font-mono font-medium text-text-tertiary tracking-wide">
           R{round}
         </span>
 
-        <span className="text-xs font-semibold text-text-secondary">
-          {playerCount} {playerCount === 1 ? 'Player' : 'Players'}
+        <span className="text-[11px] font-medium text-text-tertiary tracking-wide">
+          {playerCount}p
         </span>
       </div>
     </header>
@@ -63,10 +63,11 @@ function AnimatePhaseBadge({ phase }: { phase: GamePhase }) {
   return (
     <motion.span
       key={phase}
-      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all duration-200',
+        'text-[10px] font-semibold uppercase tracking-[0.12em]',
         phaseColors[phase]
       )}
     >

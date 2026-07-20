@@ -1,37 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-bg: hsl(240, 10%, 4%);
-  --color-bg-secondary: hsl(240, 6%, 7%);
-  --color-bg-tertiary: hsl(240, 5%, 11%);
-  --color-bg-elevated: hsl(240, 5%, 15%);
+  /* ─── Surfaces ─── */
+  --color-bg: hsl(240, 10%, 3.5%);
+  --color-bg-secondary: hsl(240, 7%, 6%);
+  --color-bg-tertiary: hsl(240, 5%, 9.5%);
+  --color-bg-elevated: hsl(240, 5%, 13%);
 
-  --color-border: hsla(240, 5%, 90%, 0.08);
-  --color-border-hover: hsla(240, 5%, 90%, 0.16);
-  --color-border-active: hsla(240, 5%, 90%, 0.28);
+  /* ─── Borders ─── */
+  --color-border: hsla(240, 5%, 90%, 0.06);
+  --color-border-hover: hsla(240, 5%, 90%, 0.12);
+  --color-border-active: hsla(240, 5%, 90%, 0.22);
 
-  --color-text-primary: hsl(0, 0%, 98%);
-  --color-text-secondary: hsl(240, 4%, 64%);
-  --color-text-tertiary: hsl(240, 4%, 42%);
+  /* ─── Text ─── */
+  --color-text-primary: hsl(0, 0%, 96%);
+  --color-text-secondary: hsl(240, 4%, 56%);
+  --color-text-tertiary: hsl(240, 4%, 36%);
   --color-text-inverse: hsl(240, 10%, 4%);
 
-  --color-accent: hsl(0, 0%, 98%);
-  --color-accent-hover: hsl(240, 5%, 88%);
-  --color-accent-subtle: hsla(0, 0%, 98%, 0.08);
+  /* ─── Accent ─── */
+  --color-accent: hsl(0, 0%, 96%);
+  --color-accent-hover: hsl(240, 5%, 82%);
+  --color-accent-subtle: hsla(0, 0%, 96%, 0.06);
 
-  --color-success: hsl(142, 60%, 45%);
-  --color-warning: hsl(47, 95%, 45%);
-  --color-error: hsl(358, 75%, 50%);
+  /* ─── Semantic ─── */
+  --color-success: hsl(142, 52%, 42%);
+  --color-warning: hsl(47, 90%, 42%);
+  --color-error: hsl(358, 68%, 48%);
 
-  --color-speaking-glow: hsla(142, 60%, 45%, 0.15);
+  --color-speaking-glow: hsla(142, 52%, 42%, 0.12);
 
+  /* ─── Type ─── */
   --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
+  /* ─── Z-layers ─── */
   --z-modal: 100;
   --z-toast: 110;
   --z-dropdown: 50;
 
+  /* ─── Safe Areas ─── */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
@@ -48,6 +56,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     background: var(--color-bg);
   }
 
@@ -68,6 +77,7 @@
   #root {
     height: 100%;
     width: 100%;
+    position: relative;
   }
 
   input, select, button, textarea {
@@ -76,13 +86,14 @@
   }
 
   ::selection {
-    background: var(--color-accent-subtle);
+    background: hsla(0, 0%, 96%, 0.1);
     color: var(--color-text-primary);
   }
 
+  /* ─── Premium Scrollbar ─── */
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
@@ -90,22 +101,195 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsla(240, 5%, 90%, 0.12);
+    background: hsla(240, 5%, 90%, 0.08);
     border-radius: 99px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsla(240, 5%, 90%, 0.2);
+    background: hsla(240, 5%, 90%, 0.14);
+  }
+
+  /* ─── Focus Outline System ─── */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(0, 0%, 96%, 0.15);
   }
 }
 
+/* ─── Ambient Background Layer ─── */
+.bg-ambient {
+  position: relative;
+}
+
+.bg-ambient::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(240, 15%, 18%, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(240, 10%, 10%, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, hsla(240, 8%, 6%, 0.4) 0%, transparent 80%);
+}
+
+/* ─── Vignette (very subtle) ─── */
+.bg-ambient::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, hsla(240, 10%, 2%, 0.5) 100%);
+}
+
+/* ─── Premium Surface Layers ─── */
+.surface-elevated {
+  background: hsla(240, 6%, 8%, 0.6);
+  border: 1px solid hsla(240, 5%, 90%, 0.05);
+  box-shadow:
+    0 0 0 1px hsla(240, 5%, 90%, 0.02),
+    0 2px 8px -2px hsla(0, 0%, 0%, 0.3),
+    0 8px 24px -4px hsla(0, 0%, 0%, 0.2);
+}
+
+.surface-card {
+  background: hsla(240, 6%, 7%, 0.5);
+  border: 1px solid hsla(240, 5%, 90%, 0.04);
+  box-shadow:
+    0 1px 3px hsla(0, 0%, 0%, 0.25),
+    0 4px 12px -2px hsla(0, 0%, 0%, 0.15);
+}
+
+.surface-inset {
+  background: hsla(240, 8%, 4%, 0.5);
+  border: 1px solid hsla(240, 5%, 90%, 0.03);
+  box-shadow: inset 0 1px 4px hsla(0, 0%, 0%, 0.25);
+}
+
+/* ─── Premium Input ─── */
+.input-premium {
+  height: 52px;
+  padding: 0 20px;
+  background: hsla(240, 8%, 5%, 0.6);
+  border: 1px solid hsla(240, 5%, 90%, 0.06);
+  border-radius: 14px;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 450;
+  letter-spacing: -0.006em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.2);
+}
+
+.input-premium::placeholder {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.input-premium:hover {
+  border-color: hsla(240, 5%, 90%, 0.1);
+  background: hsla(240, 8%, 6%, 0.7);
+}
+
+.input-premium:focus {
+  outline: none;
+  border-color: hsla(240, 5%, 90%, 0.18);
+  background: hsla(240, 8%, 7%, 0.8);
+  box-shadow:
+    inset 0 1px 3px hsla(0, 0%, 0%, 0.2),
+    0 0 0 3px hsla(0, 0%, 96%, 0.04);
+}
+
+/* ─── Premium Button ─── */
+.btn-primary {
+  height: 52px;
+  padding: 0 28px;
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 1px 2px hsla(0, 0%, 0%, 0.4),
+    0 4px 12px -2px hsla(0, 0%, 0%, 0.2),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px hsla(0, 0%, 0%, 0.4),
+    0 8px 20px -4px hsla(0, 0%, 0%, 0.25),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 2px hsla(0, 0%, 0%, 0.4),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
+}
+
+.btn-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  height: 52px;
+  padding: 0 24px;
+  background: hsla(240, 6%, 8%, 0.6);
+  color: var(--color-text-primary);
+  font-weight: 550;
+  font-size: 14px;
+  letter-spacing: 0;
+  border: 1px solid hsla(240, 5%, 90%, 0.06);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.2);
+}
+
+.btn-secondary:hover {
+  background: hsla(240, 6%, 10%, 0.7);
+  border-color: hsla(240, 5%, 90%, 0.1);
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 6px hsla(0, 0%, 0%, 0.25),
+    0 6px 16px -4px hsla(0, 0%, 0%, 0.15);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* ─── Divider ─── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsla(240, 5%, 90%, 0.06) 20%, hsla(240, 5%, 90%, 0.06) 80%, transparent);
+}
+
+/* ─── Animations ─── */
 @keyframes pulse-skeleton {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.6; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.55; }
 }
 
 @keyframes speaking-glow {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.35; }
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.3; }
 }
 
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
