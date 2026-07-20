@@ -34,13 +34,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : '*'
-const corsOptions: cors.CorsOptions = corsOrigins === '*'
-  ? { origin: '*' }
-  : { origin: corsOrigins, credentials: true }
-app.use(cors(corsOptions))
+app.use(cors())
 
 // Serve client static files if they exist (for single-server deploys)
 const distPath = path.join(__dirname, '../../dist')
@@ -61,9 +55,7 @@ app.get('/api/health', (_req, res) => {
 
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
-  cors: corsOrigins === '*'
-    ? { origin: '*', methods: ['GET', 'POST'] }
-    : { origin: corsOrigins, methods: ['GET', 'POST'], credentials: true },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 })
 
 setIO(io)
