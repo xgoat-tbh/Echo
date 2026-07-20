@@ -1344,22 +1344,44 @@ export default function App() {
                   )
                 })()}
 
-                {/* Winner announcement */}
+                {/* Winner announcement — Among Us style */}
                 {winnerId && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2, duration: 0.5 }}
-                    className="mt-5"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 1.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="mt-6 surface-elevated rounded-[16px] p-5 text-center relative overflow-hidden"
                   >
-                    <span
+                    <motion.div
+                      animate={{ opacity: [0.05, 0.15, 0.05] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="absolute inset-0"
+                      style={{
+                        background: winnerId === 'VILLAGERS'
+                          ? 'radial-gradient(ellipse at center, hsla(142,52%,42%,0.15), transparent 70%)'
+                          : 'radial-gradient(ellipse at center, hsla(358,68%,48%,0.15), transparent 70%)'
+                      }}
+                    />
+                    <motion.p
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.4, duration: 0.4 }}
                       className={cn(
-                        'text-[14px] font-extrabold uppercase tracking-[0.15em]',
+                        'relative z-10 text-[9px] font-extrabold uppercase tracking-[0.25em]',
                         winnerId === 'VILLAGERS' ? 'text-success' : 'text-error'
                       )}
                     >
-                      {winnerId === 'VILLAGERS' ? 'Villagers Win!' : 'Echo Escapes!'}
-                    </span>
+                      {winnerId === 'VILLAGERS' ? 'Victory' : 'Defeat'}
+                    </motion.p>
+                    <motion.p
+                      initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 1.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      className="relative z-10 text-[24px] font-extrabold tracking-[-0.03em] mt-0.5"
+                      style={{ color: winnerId === 'VILLAGERS' ? 'var(--color-success)' : 'var(--color-error)' }}
+                    >
+                      {winnerId === 'VILLAGERS' ? 'VILLAGERS' : 'ECHO'}
+                    </motion.p>
                   </motion.div>
                 )}
               </motion.div>
@@ -1372,6 +1394,7 @@ export default function App() {
               players={players}
               revealedEchoId={revealedEchoId}
               votes={roomState.votes}
+              winnerId={winnerId}
               onPlayAgain={actions.playAgain}
               onLeave={actions.leaveRoom}
             />
