@@ -693,7 +693,54 @@ export function handleJoinAsSpectator(socket: Socket, code: string) {
 }
 
 export function handleLeaveRoom(socketId: string) {
-  handleDisconnect(socketId)
+  for (const [code, room] of rooms.entries()) {
+    const specIdx = room.spectators.indexOf(socketId)
+    if (specIdx >= 0) {
+      room.spectators.splice(specIdx, 1)
+      getIO().to(socketId).emit('room_cleared')
+      if (room.players.every(p => p.eliminated) && room.spectators.length === 0) {
+        clearTimer(room)
+        rooms.delete(code)
+      }
+      return
+    }
+
+    const pIndex = room.players.findIndex(p => p.id === socketId)
+    if (pIndex === -1) continue
+
+    const player = room.players[pIndex]
+
+    // Cancel any pending reconnect timer
+    const timerKey = `${code}_${player.nickname}`
+    const existingTimer = disconnectTimers.get(timerKey)
+    if (existingTimer) {
+      clearTimeout(existingTimer)
+      disconnectTimers.delete(timerKey)
+    }
+
+    // Immediately remove player (no grace period for intentional leaves)
+    room.players.splice(pIndex, 1)
+
+    // Transfer host if needed
+    if (player.isHost && room.players.length > 0) {
+      const nextHost = room.players.find(p => !p.eliminated) || room.players[0]
+      nextHost.isHost = true
+      nextHost.isReady = true
+    }
+
+    // Notify leaver
+    getIO().to(socketId).emit('room_cleared')
+    getIO().sockets.sockets.get(socketId)?.leave(code)
+
+    // Clean up empty rooms
+    if (room.players.every(p => p.eliminated) && room.spectators.length === 0) {
+      clearTimer(room)
+      rooms.delete(code)
+    } else {
+      broadcastRoomState(room)
+    }
+    return
+  }
 }
 
 const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>()

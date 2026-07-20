@@ -126,6 +126,11 @@ export function useSocket() {
       roomListRef.current = rooms
     })
 
+    socket.on('room_cleared', () => {
+      setRoomState(null)
+      sessionStorage.removeItem('echo_room_code')
+    })
+
     return () => {
       socket.disconnect()
     }
@@ -182,7 +187,8 @@ export function useSocket() {
   const leaveRoom = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.emit('leave_room')
-      socketRef.current.disconnect()
+      setRoomState(null)
+      sessionStorage.removeItem('echo_room_code')
     }
   }, [])
 
