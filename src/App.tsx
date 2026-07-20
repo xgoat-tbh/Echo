@@ -314,14 +314,14 @@ export default function App() {
               />
             ))}
           </div>
-          <main className="relative z-10 flex-1 flex flex-col items-center px-6 justify-center max-w-[640px] mx-auto w-full">
+          <main className="relative z-10 flex flex-col items-center px-6 max-w-[640px] mx-auto w-full">
 
             {/* ─── Hero Block ─── */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center text-center pt-24 pb-6 w-full"
+              className="flex flex-col items-center text-center pt-20 sm:pt-24 pb-6 w-full"
             >
               {/* Logo */}
               <motion.h1
@@ -592,6 +592,16 @@ export default function App() {
               </p>
             </footer>
           </main>
+
+          {/* Theme toggle — always visible on landing */}
+          <button
+            onClick={toggleTheme}
+            className="fixed top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[11px] font-semibold text-text-tertiary hover:text-text-primary bg-bg-secondary/60 backdrop-blur-md hover:bg-bg-tertiary/60 border border-border/40 transition-all duration-200 cursor-pointer"
+            title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{isLight ? 'Dark' : 'Light'}</span>
+          </button>
         </div>
       </PageTransition>
     )
@@ -1402,12 +1412,12 @@ export default function App() {
         </main>
 
         {/* ─── Status Bar — Modern Game HUD ─── */}
-        <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-t border-border bg-bg-secondary/40 backdrop-blur-xl">
+        <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-6 py-2 border-t border-border bg-bg-secondary/40 backdrop-blur-xl overflow-x-auto min-w-0 shrink-0">
           {/* Mic */}
           <button
             onClick={toggleLocalMute}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer',
+              'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0',
               isMuted
                 ? 'bg-error/8 text-error/70 hover:bg-error/12'
                 : 'bg-bg-tertiary/30 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50'
@@ -1419,7 +1429,7 @@ export default function App() {
 
           {/* Connection indicator */}
           <div className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200',
+            'flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 shrink-0',
             isConnected ? 'bg-bg-tertiary/30 text-text-secondary' : 'bg-error/8 text-error/70'
           )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />
@@ -1427,7 +1437,7 @@ export default function App() {
           </div>
 
           {/* Ping indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-semibold">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-semibold shrink-0">
             <span className="w-1 h-1 rounded-full bg-text-tertiary/40" />
             <span>Stable</span>
           </div>
@@ -1435,18 +1445,18 @@ export default function App() {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[11px] font-semibold text-text-tertiary hover:text-text-primary bg-bg-tertiary/20 hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold text-text-tertiary hover:text-text-primary bg-bg-tertiary/20 hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer shrink-0"
             title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
           >
             {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{isLight ? 'Dark' : 'Light'}</span>
           </button>
 
-          <div className="flex-1" />
+          <div className="flex-1 min-w-[4px]" />
 
           {/* Room code (compact) */}
           {roomState && (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-mono font-semibold tracking-wider">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-mono font-semibold tracking-wider shrink-0">
               {code}
             </div>
           )}
@@ -1454,7 +1464,7 @@ export default function App() {
           {/* Leave */}
           <button
             onClick={actions.leaveRoom}
-            className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold text-error/60 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/30 hover:border-error/20 transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold text-error/60 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/30 hover:border-error/20 transition-all duration-200 cursor-pointer shrink-0"
           >
             <LogOut className="w-3 h-3" />
             <span className="hidden sm:inline">Leave</span>
