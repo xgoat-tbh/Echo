@@ -762,7 +762,7 @@ export default function App() {
                           'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer relative overflow-hidden',
                           self?.isReady
                             ? 'bg-bg-secondary border border-border/60 text-text-secondary hover:border-border-hover/40'
-                            : 'bg-accent text-white hover:brightness-110 shadow-lg shadow-accent/20'
+                            : 'bg-accent text-text-inverse hover:brightness-110 shadow-lg shadow-accent/20'
                         )}
                       >
                         <motion.span
@@ -787,7 +787,7 @@ export default function App() {
                         className={cn(
                           'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 relative overflow-hidden',
                           players.length >= 4
-                            ? 'bg-accent text-white hover:brightness-110 shadow-lg shadow-accent/20'
+                            ? 'bg-accent text-text-inverse hover:brightness-110 shadow-lg shadow-accent/20'
                             : 'bg-bg-tertiary/30 text-text-tertiary cursor-not-allowed'
                         )}
                       >
@@ -910,30 +910,72 @@ export default function App() {
 
           {/* ─── ASSIGNING ─── */}
           {status === 'ASSIGNING' && (
-            <div className="flex flex-col items-center justify-center h-full gap-6">
+            <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
+              {/* Step 1: Role reveal */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                  'rounded-[20px] p-4 px-8 text-center',
+                  'rounded-[20px] p-5 px-10 text-center relative overflow-hidden',
                   self?.isEcho
                     ? 'bg-error/10 border border-error/20'
                     : 'bg-success/10 border border-success/20'
                 )}
               >
-                <span className="text-[13px] font-extrabold uppercase tracking-[0.15em]">
+                {self?.isEcho && (
+                  <motion.div
+                    animate={{ opacity: [0.1, 0.3, 0.1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0"
+                    style={{ boxShadow: 'inset 0 0 60px hsla(358,68%,48%,0.1)' }}
+                  />
+                )}
+                <motion.span
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.4 }}
+                  className={cn(
+                    'text-[13px] font-extrabold uppercase tracking-[0.15em]',
+                    self?.isEcho ? 'text-error' : 'text-success'
+                  )}
+                >
                   {self?.isEcho ? 'You are the Echo' : 'You are a Commoner'}
-                </span>
+                </motion.span>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35, duration: 0.4 }}
+                  className="text-[11px] text-text-tertiary mt-2 font-medium"
+                >
+                  {self?.isEcho
+                    ? 'Your word is different — blend in!'
+                    : 'Find the player with the odd word.'
+                  }
+                </motion.p>
               </motion.div>
-              <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
+
+              {/* Step 2: Common word */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full"
+              >
                 <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
-                  The Word Is
+                  The Common Word
                 </p>
                 <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
                   {publicWord}
                 </p>
-              </div>
+                <div className="divider mt-4 mb-3" />
+                <p className="text-[11px] text-text-tertiary leading-[1.6]">
+                  All commoners describe this word.<br />
+                  The Echo describes a different word.
+                </p>
+              </motion.div>
+
+              {/* Step 3: Your secret word */}
               <WordReveal word={self?.word || null} visible />
             </div>
           )}
@@ -1001,38 +1043,77 @@ export default function App() {
                 </div>
               )}
 
-              {!isMyTurn && (
-                <div className="flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary surface-card px-5 py-3 rounded-full mt-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                  Listening to {currentSpeaker?.nickname || 'Speaker'}...
-                </div>
-              )}
-
-              {/* Speaker queue */}
+              {/* Speaker queue — Find the Fox style */}
               {clueOrder?.length > 0 && (
-                <div className="w-full flex items-center justify-center gap-1.5 mt-1">
-                  {clueOrder.map((playerIdx, orderIdx) => {
-                    const p = players[playerIdx]
-                    if (!p) return null
-                    const isPast = orderIdx < currentSpeakerIndex
-                    const isCurrent = orderIdx === currentSpeakerIndex
-                    const isUpcoming = orderIdx > currentSpeakerIndex
-                    return (
-                      <div
-                        key={orderIdx}
-                        className={cn(
-                          'w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold transition-all duration-300',
-                          isCurrent ? 'ring-2 ring-offset-1 ring-offset-bg scale-110' : '',
-                          isPast ? 'opacity-30' : '',
-                          isUpcoming ? 'opacity-50' : ''
-                        )}
-                        style={{ backgroundColor: `${getPlayerColor(p.id, playerIdx)}30`, color: getPlayerColor(p.id, playerIdx) }}
-                        title={p.nickname}
-                      >
-                        {p.nickname.charAt(0).toUpperCase()}
-                      </div>
-                    )
-                  })}
+                <div className="w-full mt-2">
+                  <div className="flex items-center justify-center gap-1">
+                    {clueOrder.map((playerIdx, orderIdx) => {
+                      const p = players[playerIdx]
+                      if (!p) return null
+                      const isPast = orderIdx < currentSpeakerIndex
+                      const isCurrent = orderIdx === currentSpeakerIndex
+                      const isUpcoming = orderIdx > currentSpeakerIndex
+                      const color = getPlayerColor(p.id, playerIdx)
+                      return (
+                        <motion.div
+                          key={orderIdx}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{
+                            opacity: isCurrent ? 1 : isPast ? 0.5 : 0.7,
+                            y: 0,
+                            scale: isCurrent ? 1.15 : 1,
+                          }}
+                          transition={{ duration: 0.3, delay: orderIdx * 0.03 }}
+                          className="relative"
+                        >
+                          {/* Speaking glow ring for current speaker */}
+                          {isCurrent && (
+                            <motion.div
+                              animate={{ opacity: [0.4, 0.8, 0.4] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                              className="absolute -inset-1 rounded-full"
+                              style={{ boxShadow: `0 0 12px ${color}60` }}
+                            />
+                          )}
+                          <div
+                            className={cn(
+                              'relative z-10 w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300',
+                              isCurrent ? 'ring-2' : '',
+                              isPast ? 'opacity-60 grayscale' : ''
+                            )}
+                            style={{
+                              backgroundColor: isCurrent ? `${color}35` : `${color}18`,
+                              color,
+                              ringColor: isCurrent ? color : 'transparent',
+                              boxShadow: isCurrent ? `0 0 0 2px ${color}80` : 'none',
+                            }}
+                          >
+                            {isPast ? (
+                              <Check className="w-3.5 h-3.5" />
+                            ) : (
+                              p.nickname.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          {/* Name label */}
+                          <span
+                            className={cn(
+                              'block text-[8px] font-semibold text-center mt-0.5 max-w-[36px] truncate transition-all duration-200',
+                              isCurrent ? 'text-text-primary' : 'text-text-tertiary'
+                            )}
+                          >
+                            {isCurrent ? 'YOU' : p.nickname.slice(0, 4)}
+                          </span>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                  {/* Status text */}
+                  <p className="text-[10px] text-center text-text-tertiary font-medium mt-2 tracking-wide">
+                    {isMyTurn
+                      ? 'Your turn to give a clue'
+                      : `Waiting for ${currentSpeaker?.nickname || 'Speaker'}...`
+                    }
+                  </p>
                 </div>
               )}
 
@@ -1169,42 +1250,117 @@ export default function App() {
 
           {/* ─── REVEAL ─── */}
           {status === 'REVEAL' && (
-            <div className="flex flex-col items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full px-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="text-center"
+                className="text-center w-full max-w-sm"
               >
                 <motion.p
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="text-sm font-semibold tracking-wide text-text-secondary mb-4 uppercase"
+                  className="text-sm font-semibold tracking-wide text-text-secondary mb-6 uppercase"
                 >
                   The votes are in...
                 </motion.p>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center justify-center gap-1"
-                >
-                  {revealedEchoId ? (
-                    <span className="text-[48px] font-extrabold text-accent tracking-[-0.04em]">Revealed</span>
-                  ) : (
-                    <span className="text-[48px] font-extrabold text-text-primary tracking-[-0.04em]">Tie</span>
-                  )}
-                </motion.div>
-                {winnerId && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.0, duration: 0.5 }}
-                    className="text-[15px] text-text-secondary mt-4 font-semibold"
+
+                {/* Tie */}
+                {!revealedEchoId && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex flex-col items-center gap-3"
                   >
-                    {winnerId === 'VILLAGERS' ? 'The villagers win!' : 'The Echo escapes!'}
-                  </motion.p>
+                    <span className="text-[40px] font-extrabold text-text-primary tracking-[-0.04em]">
+                      Tie Vote
+                    </span>
+                    <p className="text-[13px] text-text-secondary">No one was eliminated this round.</p>
+                  </motion.div>
+                )}
+
+                {/* Eliminated player reveal */}
+                {revealedEchoId && (() => {
+                  const eliminated = players.find(p => p.id === revealedEchoId)
+                  if (!eliminated) return null
+                  const isEcho = roomState.players.find(p => p.id === revealedEchoId)?.isEcho || false
+                  const color = getPlayerColor(eliminated.id, players.indexOf(eliminated))
+                  const voteCount = roomState.votes.filter(v => v.targetId === revealedEchoId).length
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                      className="surface-elevated rounded-[20px] p-6 text-center relative overflow-hidden"
+                    >
+                      {/* Pulsing glow */}
+                      <motion.div
+                        animate={{ opacity: [0.08, 0.2, 0.08] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0"
+                        style={{
+                          background: isEcho
+                            ? `radial-gradient(circle at center, hsla(358,68%,48%,0.15), transparent 70%)`
+                            : `radial-gradient(circle at center, hsla(142,52%,42%,0.15), transparent 70%)`
+                        }}
+                      />
+                      <div className="relative z-10">
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.6, duration: 0.4 }}
+                          className="text-[10px] uppercase tracking-[0.22em] font-semibold mb-3"
+                          style={{ color: isEcho ? 'var(--color-error)' : 'var(--color-success)' }}
+                        >
+                          {isEcho ? 'Eliminated — They were the Echo!' : 'Eliminated — They were a Commoner'}
+                        </motion.p>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.7, type: 'spring', stiffness: 200, damping: 15 }}
+                          className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center text-[22px] font-bold"
+                          style={{
+                            backgroundColor: `${color}20`,
+                            color,
+                            boxShadow: isEcho ? `0 0 20px ${color}40` : 'none',
+                          }}
+                        >
+                          {eliminated.nickname.charAt(0).toUpperCase()}
+                        </motion.div>
+                        <span className="text-[18px] font-bold text-text-primary tracking-[-0.02em]">{eliminated.nickname}</span>
+                        <div className="divider my-3" />
+                        <p className="text-[11px] text-text-secondary">
+                          Received <span className="font-bold text-text-primary">{voteCount}</span> vote{voteCount !== 1 ? 's' : ''}
+                        </p>
+                        {isEcho && eliminated.word && (
+                          <p className="text-[11px] text-text-secondary mt-1">
+                            Their secret word: <span className="font-mono font-semibold text-error uppercase">{eliminated.word}</span>
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })()}
+
+                {/* Winner announcement */}
+                {winnerId && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.2, duration: 0.5 }}
+                    className="mt-5"
+                  >
+                    <span
+                      className={cn(
+                        'text-[14px] font-extrabold uppercase tracking-[0.15em]',
+                        winnerId === 'VILLAGERS' ? 'text-success' : 'text-error'
+                      )}
+                    >
+                      {winnerId === 'VILLAGERS' ? 'Villagers Win!' : 'Echo Escapes!'}
+                    </span>
+                  </motion.div>
                 )}
               </motion.div>
             </div>
@@ -1213,7 +1369,7 @@ export default function App() {
           {/* ─── RESULTS ─── */}
           {status === 'RESULTS' && (
             <ResultsScreen
-              players={players.map(p => ({ ...p, username: p.nickname, avatar: '' })) as any}
+              players={players}
               revealedEchoId={revealedEchoId}
               votes={roomState.votes}
               onPlayAgain={actions.playAgain}
