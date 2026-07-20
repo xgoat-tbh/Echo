@@ -54,7 +54,8 @@ export function useSocket() {
     const serverUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_WS_URL?.replace(/^ws/, 'http') || window.location.origin
 
     const socket = io(serverUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      timeout: 30000,
     })
     socketRef.current = socket
 
@@ -76,7 +77,9 @@ export function useSocket() {
     })
 
     socket.on('connect_error', (err) => {
-      setConnectError(`Connection failed: ${err.message}`)
+      const msg = err.message || 'unknown error'
+      setConnectError(`Connection failed: ${msg}`)
+      // Socket.io will retry with polling fallback automatically
     })
 
     socket.on('room_updated', (state: RoomState) => {

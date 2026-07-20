@@ -1,1 +1,1 @@
-Add connection error handling, improve server startup resilience, support old VITE_WS_URL env var name
+Fix Socket.io transport order - use polling first, upgrade to websocket
