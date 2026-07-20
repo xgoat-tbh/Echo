@@ -1084,7 +1084,6 @@ export default function App() {
                             style={{
                               backgroundColor: isCurrent ? `${color}35` : `${color}18`,
                               color,
-                              ringColor: isCurrent ? color : 'transparent',
                               boxShadow: isCurrent ? `0 0 0 2px ${color}80` : 'none',
                             }}
                           >
