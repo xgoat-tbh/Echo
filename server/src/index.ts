@@ -20,6 +20,7 @@ import {
   handlePlayAgain,
   handleToggleMute,
   handleUpdateSettings,
+  handleSetCustomWordPairs,
   handleKickPlayer,
   handleChatMessage,
   handleJoinAsSpectator,
@@ -116,6 +117,10 @@ io.on('connection', (socket) => {
 
   socket.on('update_settings', (settings) => {
     handleUpdateSettings(socket.id, settings)
+  })
+
+  socket.on('set_custom_words', ({ pairs }) => {
+    handleSetCustomWordPairs(socket.id, pairs)
   })
 
   socket.on('kick_player', ({ targetId }) => {

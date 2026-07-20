@@ -46,6 +46,7 @@ export interface GameRoom {
   timerValue: number
   echoPlayerIds: string[]
   spectators: string[]
+  customWordPairs: WordPair[]
 }
 
 export const rooms = new Map<string, GameRoom>()
@@ -215,6 +216,7 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     timerValue: 0,
     echoPlayerIds: [],
     spectators: [],
+    customWordPairs: [],
   }
 
   rooms.set(code, room)
@@ -287,7 +289,7 @@ function startNewRound(room: GameRoom) {
     return
   }
 
-  const pair = getRandomWordPair(room.settings.wordDifficulty, room.settings.wordPack)
+  const pair = getRandomWordPair(room.settings.wordDifficulty, room.settings.wordPack, room.customWordPairs)
   room.wordPair = pair
   room.status = 'ASSIGNING'
   room.currentRound++
@@ -603,6 +605,22 @@ export function handleToggleMute(socketId: string, isMuted: boolean) {
   const player = room.players.find(p => p.id === socketId)
   if (!player) return
   player.isMuted = isMuted
+  broadcastRoomState(room)
+}
+
+export function handleSetCustomWordPairs(socketId: string, pairs: WordPair[]) {
+  const room = findPlayerRoom(socketId)
+  if (!room) return
+  const host = room.players.find(p => p.id === socketId && p.isHost)
+  if (!host) return
+  if (room.status !== 'LOBBY') return
+
+  room.customWordPairs = pairs.filter(p => p.word?.trim() && p.echo?.trim()).map(p => ({
+    word: p.word.trim(),
+    echo: p.echo.trim(),
+    difficulty: 'normal' as const,
+    pack: 'custom',
+  }))
   broadcastRoomState(room)
 }
 

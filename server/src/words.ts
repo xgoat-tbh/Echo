@@ -2,7 +2,7 @@ export interface WordPair {
   word: string
   echo: string
   difficulty: 'easy' | 'normal' | 'hard'
-  pack: 'mixed' | 'animals' | 'food' | 'nature' | 'objects' | 'fantasy'
+  pack: string
 }
 
 const WORD_PAIRS: WordPair[] = [
@@ -108,7 +108,10 @@ const WORD_PAIRS: WordPair[] = [
   { word: 'Nest', echo: 'Cave', difficulty: 'normal', pack: 'fantasy' },
 ]
 
-export function getRandomWordPair(difficulty?: 'easy' | 'normal' | 'hard', pack?: string): WordPair {
+export function getRandomWordPair(difficulty?: 'easy' | 'normal' | 'hard', pack?: string, customPairs?: WordPair[]): WordPair {
+  if (pack === 'custom' && customPairs && customPairs.length > 0) {
+    return customPairs[Math.floor(Math.random() * customPairs.length)]
+  }
   let pool = WORD_PAIRS
   if (difficulty) pool = pool.filter(p => p.difficulty === difficulty)
   if (pack && pack !== 'mixed') pool = pool.filter(p => p.pack === pack)

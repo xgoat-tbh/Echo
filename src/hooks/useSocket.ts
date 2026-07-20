@@ -246,6 +246,12 @@ export function useSocket() {
     }
   }, [])
 
+  const setCustomWords = useCallback((pairs: { word: string; echo: string }[]) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('set_custom_words', { pairs })
+    }
+  }, [])
+
   return {
     socket: socketRef.current,
     roomState,
@@ -275,6 +281,7 @@ export function useSocket() {
       joinAsSpectator,
       listRooms,
       reconnect,
+      setCustomWords,
     },
     roomList: roomListRef.current,
   }

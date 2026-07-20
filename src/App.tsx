@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare, Link2 } from 'lucide-react'
+import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare, Link2, Sun, Moon } from 'lucide-react'
 import { useSocket, type Player } from './hooks/useSocket'
 import { PageTransition } from './motion/PageTransition'
 import { GameHeader } from './game/components/GameHeader'
@@ -15,6 +15,8 @@ import { CustomCheckbox } from './game/components/CustomCheckbox'
 import { cn } from './lib/cn'
 import { config } from './config'
 import { getPlayerColor } from './game/playerColors'
+import { useTheme } from './hooks/useTheme'
+import { CustomWordsModal } from './game/components/CustomWordsModal'
 
 export default function App() {
   const { roomState, error, isConnected, connectError, voiceOffer, voiceAnswer, iceCandidate, actions, socket } = useSocket()
@@ -35,6 +37,9 @@ export default function App() {
   const [playerKey, setPlayerKey] = useState(() => localStorage.getItem('echo_player_key') || '')
   const [keyInput, setKeyInput] = useState('')
   const [showKeyPanel, setShowKeyPanel] = useState(false)
+  const [showCustomWords, setShowCustomWords] = useState(false)
+
+  const { isLight, toggle: toggleTheme } = useTheme()
 
   // Voice P2P
   const [isMuted, setIsMuted] = useState(false)
@@ -860,11 +865,20 @@ export default function App() {
                             { value: 'nature', label: 'Nature' },
                             { value: 'objects', label: 'Objects' },
                             { value: 'fantasy', label: 'Fantasy' },
+                            { value: 'custom', label: 'Custom' },
                           ]}
                           value={settings.wordPack}
                           onChange={(v) => actions.updateSettings({ wordPack: v })}
                           label="Word Pack"
                         />
+                        {settings.wordPack === 'custom' && (
+                          <button
+                            onClick={() => setShowCustomWords(true)}
+                            className="col-span-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[12px] text-[12px] font-semibold bg-rose/10 text-rose hover:bg-rose/20 border border-rose/20 transition-all duration-200 cursor-pointer"
+                          >
+                            Manage Custom Word Pairs
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -1239,6 +1253,16 @@ export default function App() {
             <span>Stable</span>
           </div>
 
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[11px] font-semibold text-text-tertiary hover:text-text-primary bg-bg-tertiary/20 hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer"
+            title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{isLight ? 'Dark' : 'Light'}</span>
+          </button>
+
           <div className="flex-1" />
 
           {/* Room code (compact) */}
@@ -1325,6 +1349,13 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <CustomWordsModal
+          open={showCustomWords}
+          onClose={() => setShowCustomWords(false)}
+          onSubmit={(pairs) => actions.setCustomWords(pairs)}
+          currentPairs={0}
+        />
       </div>
     </PageTransition>
   )

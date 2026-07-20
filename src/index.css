@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  /* ─── Surfaces ─── */
+  /* ─── Surfaces (Dark) ─── */
   --color-bg: hsl(240, 10%, 3.5%);
   --color-bg-secondary: hsl(240, 7%, 6%);
   --color-bg-tertiary: hsl(240, 5%, 9.5%);
@@ -30,6 +30,17 @@
 
   --color-speaking-glow: hsla(142, 52%, 42%, 0.12);
 
+  /* ─── Light theme accent ─── */
+  --color-accent-light: hsl(223, 100%, 62%);
+  --color-accent-light-hover: hsl(223, 90%, 55%);
+
+  /* ─── Premium accent palette ─── */
+  --color-rose: hsl(340, 82%, 52%);
+  --color-amber: hsl(35, 92%, 50%);
+  --color-emerald: hsl(160, 84%, 39%);
+  --color-cyan: hsl(190, 80%, 50%);
+  --color-violet: hsl(270, 80%, 60%);
+
   /* ─── Type ─── */
   --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
@@ -44,6 +55,146 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ─── Light Mode ─── */
+.light {
+  --color-bg: hsl(0, 0%, 97%);
+  --color-bg-secondary: hsl(0, 0%, 94%);
+  --color-bg-tertiary: hsl(0, 0%, 89%);
+  --color-bg-elevated: hsl(0, 0%, 100%);
+
+  --color-border: hsla(0, 0%, 0%, 0.06);
+  --color-border-hover: hsla(0, 0%, 0%, 0.12);
+  --color-border-active: hsla(0, 0%, 0%, 0.2);
+
+  --color-text-primary: hsl(0, 0%, 12%);
+  --color-text-secondary: hsl(0, 0%, 38%);
+  --color-text-tertiary: hsl(0, 0%, 56%);
+  --color-text-inverse: hsl(0, 0%, 96%);
+
+  --color-accent: hsl(223, 100%, 62%);
+  --color-accent-hover: hsl(223, 90%, 55%);
+  --color-accent-subtle: hsla(223, 100%, 62%, 0.08);
+
+  --color-success: hsl(142, 55%, 38%);
+  --color-warning: hsl(38, 92%, 42%);
+  --color-error: hsl(358, 65%, 44%);
+
+  --color-speaking-glow: hsla(142, 55%, 38%, 0.1);
+}
+
+/* ─── Light mode overrides for hardcoded CSS classes ─── */
+.light ::selection {
+  background: hsla(223, 100%, 62%, 0.12);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: hsla(0, 0%, 0%, 0.08);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: hsla(0, 0%, 0%, 0.14);
+}
+
+.light :focus-visible {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(223, 100%, 62%, 0.2);
+}
+
+.light .bg-ambient::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(223, 40%, 75%, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(0, 0%, 60%, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, hsla(223, 30%, 85%, 0.04) 0%, transparent 80%);
+}
+
+.light .bg-ambient::after {
+  background: radial-gradient(ellipse at center, transparent 50%, hsla(0, 0%, 50%, 0.08) 100%);
+}
+
+.light .surface-elevated {
+  background: hsla(0, 0%, 100%, 0.8);
+  border: 1px solid hsla(0, 0%, 0%, 0.04);
+  box-shadow:
+    0 0 0 1px hsla(0, 0%, 0%, 0.02),
+    0 2px 8px -2px hsla(0, 0%, 0%, 0.06),
+    0 8px 24px -4px hsla(0, 0%, 0%, 0.04);
+}
+
+.light .surface-card {
+  background: hsla(0, 0%, 100%, 0.7);
+  border: 1px solid hsla(0, 0%, 0%, 0.04);
+  box-shadow:
+    0 1px 3px hsla(0, 0%, 0%, 0.04),
+    0 4px 12px -2px hsla(0, 0%, 0%, 0.03);
+}
+
+.light .surface-inset {
+  background: hsla(0, 0%, 90%, 0.3);
+  border: 1px solid hsla(0, 0%, 0%, 0.04);
+  box-shadow: inset 0 1px 4px hsla(0, 0%, 0%, 0.04);
+}
+
+.light .input-premium {
+  background: hsla(0, 0%, 100%, 0.8);
+  border: 1px solid hsla(0, 0%, 0%, 0.06);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.04);
+}
+
+.light .input-premium::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.light .input-premium:hover {
+  border-color: hsla(0, 0%, 0%, 0.1);
+  background: hsla(0, 0%, 100%, 0.9);
+}
+
+.light .input-premium:focus {
+  border-color: hsla(223, 100%, 62%, 0.3);
+  background: hsla(0, 0%, 100%, 1);
+  box-shadow:
+    inset 0 1px 3px hsla(0, 0%, 0%, 0.04),
+    0 0 0 3px hsla(223, 100%, 62%, 0.08);
+}
+
+.light .btn-primary {
+  background: hsl(223, 100%, 62%);
+  color: white;
+  box-shadow:
+    0 1px 2px hsla(223, 100%, 62%, 0.3),
+    0 4px 12px -2px hsla(223, 100%, 62%, 0.2),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.15);
+}
+
+.light .btn-primary:hover {
+  background: hsl(223, 90%, 55%);
+}
+
+.light .btn-primary:active {
+  box-shadow:
+    0 1px 2px hsla(223, 100%, 62%, 0.3),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
+}
+
+.light .btn-secondary {
+  background: hsla(0, 0%, 100%, 0.8);
+  color: var(--color-text-primary);
+  border: 1px solid hsla(0, 0%, 0%, 0.06);
+  box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.03);
+}
+
+.light .btn-secondary:hover {
+  background: hsla(0, 0%, 100%, 0.9);
+  border-color: hsla(0, 0%, 0%, 0.1);
+  box-shadow:
+    0 2px 6px hsla(0, 0%, 0%, 0.04),
+    0 6px 16px -4px hsla(0, 0%, 0%, 0.03);
+}
+
+.light .divider {
+  background: linear-gradient(90deg, transparent, hsla(0, 0%, 0%, 0.04) 20%, hsla(0, 0%, 0%, 0.04) 80%, transparent);
 }
 
 @layer base {
