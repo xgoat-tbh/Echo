@@ -19,6 +19,12 @@ import {
   handleCastVote,
   handlePlayAgain,
   handleToggleMute,
+  handleUpdateSettings,
+  handleKickPlayer,
+  handleChatMessage,
+  handleJoinAsSpectator,
+  handleListRooms,
+  handleReconnect,
   handleLeaveRoom,
   handleDisconnect,
 } from './game.js'
@@ -106,6 +112,31 @@ io.on('connection', (socket) => {
 
   socket.on('toggle_mute', (isMuted) => {
     handleToggleMute(socket.id, isMuted)
+  })
+
+  socket.on('update_settings', (settings) => {
+    handleUpdateSettings(socket.id, settings)
+  })
+
+  socket.on('kick_player', ({ targetId }) => {
+    handleKickPlayer(socket.id, targetId)
+  })
+
+  socket.on('chat_message', ({ text }) => {
+    handleChatMessage(socket.id, text)
+  })
+
+  socket.on('join_as_spectator', ({ code }) => {
+    handleJoinAsSpectator(socket, code)
+  })
+
+  socket.on('list_rooms', () => {
+    const rooms = handleListRooms()
+    socket.emit('room_list', rooms)
+  })
+
+  socket.on('reconnect', ({ code, nickname }) => {
+    handleReconnect(socket, code, nickname)
   })
 
   // Voice P2P signaling relay

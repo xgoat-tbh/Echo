@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft } from 'lucide-react'
+import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, Sparkles, MessageSquare } from 'lucide-react'
 import { useSocket, type Player } from './hooks/useSocket'
 import { PageTransition } from './motion/PageTransition'
 import { GameHeader } from './game/components/GameHeader'
@@ -8,17 +8,31 @@ import { WordReveal } from './game/components/WordReveal'
 import { VotePanel } from './game/components/VotePanel'
 import { ResultsScreen } from './game/components/ResultsScreen'
 import { Timer } from './game/components/Timer'
+import { PhaseBanner } from './game/components/PhaseBanner'
+import { Confetti } from './game/components/Confetti'
 import { cn } from './lib/cn'
 import { config } from './config'
+import { getPlayerColor } from './game/playerColors'
 
 export default function App() {
   const { roomState, error, isConnected, connectError, voiceOffer, voiceAnswer, iceCandidate, actions, socket } = useSocket()
 
-  const [nickname, setNickname] = useState('')
+  const [nickname, setNickname] = useState(() => localStorage.getItem('echo_nickname') || '')
   const [roomCodeInput, setRoomCodeInput] = useState('')
   const [isJoining, setIsJoining] = useState(false)
   const [copied, setCopied] = useState(false)
   const [clueText, setClueText] = useState('')
+  const [chatInput, setChatInput] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
+  const [spectatorCopied, setSpectatorCopied] = useState(false)
+  const [showBanner, setShowBanner] = useState(false)
+  const [bannerPhase, setBannerPhase] = useState('')
+  const [clueShake, setClueShake] = useState(false)
+  const [showMobileChat, setShowMobileChat] = useState(false)
+  const [showRoomBrowser, setShowRoomBrowser] = useState(false)
+  const [playerKey, setPlayerKey] = useState(() => localStorage.getItem('echo_player_key') || '')
+  const [keyInput, setKeyInput] = useState('')
+  const [showKeyPanel, setShowKeyPanel] = useState(false)
 
   // Voice P2P
   const [isMuted, setIsMuted] = useState(false)
@@ -53,8 +67,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (roomState) initLocalAudio()
-  }, [roomState?.code])
+    if (roomState && roomState.settings.enableVoice !== false) initLocalAudio()
+  }, [roomState?.code, roomState?.settings.enableVoice])
 
   useEffect(() => {
     return () => {
@@ -163,15 +177,102 @@ export default function App() {
     actions.toggleMute(next)
   }
 
+  // ─── Player key system ───
+  useEffect(() => {
+    if (!playerKey) {
+      const key = Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 30)]).join('')
+      setPlayerKey(key)
+      localStorage.setItem('echo_player_key', key)
+    }
+  }, [])
+
+  const handleLoadKey = () => {
+    const k = keyInput.trim().toUpperCase()
+    if (k.length >= 4) {
+      localStorage.setItem('echo_player_key', k)
+      setPlayerKey(k)
+      setKeyInput('')
+      setShowKeyPanel(false)
+    }
+  }
+
+  // ─── Haptic feedback ───
+  const haptic = (ms = 10) => { try { navigator.vibrate(ms) } catch {} }
+
+  // ─── Sound effects ───
+  const beepRef = useRef<AudioContext | null>(null)
+  const playBeep = (type: 'turn' | 'phase' | 'vote') => {
+    try {
+      if (!beepRef.current) beepRef.current = new AudioContext()
+      const ctx = beepRef.current
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      gain.gain.value = 0.1
+      if (type === 'turn') { osc.frequency.value = 660; osc.type = 'sine'; gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3); haptic(15) }
+      else if (type === 'phase') { osc.frequency.value = 880; osc.type = 'triangle'; gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5); haptic(30) }
+      else { osc.frequency.value = 440; osc.type = 'sawtooth'; gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2); haptic(10) }
+      osc.start(); osc.stop(ctx.currentTime + 0.5)
+    } catch {}
+  }
+
+  // Play sound on phase change or turn change
+  const prevPhaseRef = useRef(roomState?.status)
+  const prevSpeakerRef = useRef(roomState?.currentSpeakerIndex)
+  useEffect(() => {
+    if (!roomState) return
+    if (prevPhaseRef.current && prevPhaseRef.current !== roomState.status) {
+      playBeep('phase')
+      setBannerPhase(roomState.status)
+      setShowBanner(true)
+      const t = setTimeout(() => setShowBanner(false), 1600)
+      return () => clearTimeout(t)
+    }
+    if (prevSpeakerRef.current !== roomState.currentSpeakerIndex && roomState.status === 'CLUE') {
+      playBeep('turn')
+    }
+    prevPhaseRef.current = roomState.status
+    prevSpeakerRef.current = roomState.currentSpeakerIndex
+  }, [roomState?.status, roomState?.currentSpeakerIndex])
+
+  // ─── Reconnect: store session data ───
+  useEffect(() => {
+    if (roomState) {
+      localStorage.setItem('echo_nickname', nickname)
+      sessionStorage.setItem('echo_room_code', roomState.code)
+    }
+  }, [roomState?.code])
+
+  // Auto-reconnect on mount
+  useEffect(() => {
+    const savedCode = sessionStorage.getItem('echo_room_code')
+    const savedNick = localStorage.getItem('echo_nickname')
+    if (savedCode && savedNick && socket?.connected && !roomState) {
+      actions.reconnect(savedCode, savedNick)
+    }
+  }, [socket?.connected])
+
+  // ─── Spectator mode from URL ───
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const spectateCode = params.get('spectate')
+    if (spectateCode && socket?.connected) {
+      actions.joinAsSpectator(spectateCode.toUpperCase())
+    }
+  }, [socket?.connected])
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
     if (!nickname.trim()) return
+    sessionStorage.setItem('echo_nickname', nickname.trim())
     actions.createRoom(nickname.trim())
   }
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault()
     if (!nickname.trim() || !roomCodeInput.trim()) return
+    sessionStorage.setItem('echo_nickname', nickname.trim())
     actions.joinRoom(roomCodeInput.trim().toUpperCase(), nickname.trim())
   }
 
@@ -179,7 +280,32 @@ export default function App() {
   if (!roomState) {
     return (
       <PageTransition>
-        <div className="flex h-full flex-col overflow-y-auto bg-bg bg-ambient">
+        <div className="flex h-full flex-col overflow-y-auto bg-bg bg-ambient relative">
+          {/* Background particles */}
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#FF8A5C'][i % 5],
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  opacity: [0.15, 0.4, 0.15],
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 3,
+                  repeat: Infinity,
+                  delay: Math.random() * 3,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              />
+            ))}
+          </div>
           <main className="relative z-10 flex-1 flex flex-col items-center px-6 justify-center max-w-[640px] mx-auto w-full">
 
             {/* ─── Hero Block ─── */}
@@ -336,6 +462,67 @@ export default function App() {
                 </AnimatePresence>
               </motion.div>
 
+              {/* Room browser + Player Key */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex items-center gap-3 mt-5"
+              >
+                <button onClick={() => { actions.listRooms(); setShowRoomBrowser(!showRoomBrowser) }} className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-tertiary hover:text-text-primary transition-colors duration-200 cursor-pointer px-3 py-1.5 rounded-lg hover:bg-bg-tertiary/30">
+                  Browse Rooms
+                </button>
+                <span className="h-3 w-px bg-border/40" />
+                <button onClick={() => setShowKeyPanel(!showKeyPanel)} className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-tertiary hover:text-text-primary transition-colors duration-200 cursor-pointer px-3 py-1.5 rounded-lg hover:bg-bg-tertiary/30">
+                  My Key
+                </button>
+              </motion.div>
+
+              {/* Room Browser Panel */}
+              <AnimatePresence>
+                {showRoomBrowser && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -8, height: 0 }}
+                    className="w-full max-w-[400px] surface-card rounded-2xl p-4 mt-2 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary">Open Rooms</p>
+                      <button onClick={() => actions.listRooms()} className="text-[10px] text-accent hover:text-accent/80 font-semibold uppercase tracking-[0.1em] cursor-pointer">Refresh</button>
+                    </div>
+                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                      <p className="text-[12px] text-text-tertiary text-center py-4">Click refresh to find rooms</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Player Key Panel */}
+              <AnimatePresence>
+                {showKeyPanel && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -8, height: 0 }}
+                    className="w-full max-w-[400px] surface-card rounded-2xl p-4 mt-2 overflow-hidden"
+                  >
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary mb-2">Your Player Key</p>
+                    <p className="text-[11px] text-text-secondary mb-3 leading-[1.6]">Use this key on another device to keep your name and stats.</p>
+                    <div className="flex items-center gap-2 surface-elevated px-3 py-2 rounded-xl mb-3">
+                      <span className="flex-1 font-mono font-bold text-[16px] tracking-[0.2em] text-text-primary select-all">{playerKey}</span>
+                      <button onClick={() => { navigator.clipboard.writeText(playerKey); setCopied(true); setTimeout(() => setCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer">
+                        {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5 text-text-tertiary" />}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" value={keyInput} onChange={(e) => setKeyInput(e.target.value.toUpperCase().slice(0, 8))} onKeyDown={(e) => e.key === 'Enter' && handleLoadKey()} placeholder="Paste a key..." className="flex-1 input-premium !py-1.5 !text-[12px]" />
+                      <button onClick={handleLoadKey} disabled={keyInput.trim().length < 4} className="btn-primary !h-auto !px-4 !py-1.5 !text-[11px] cursor-pointer">Load</button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Meta line */}
               <motion.p
                 initial={{ opacity: 0 }}
@@ -407,11 +594,19 @@ export default function App() {
   const speakerPlayerIdx = clueOrder?.length > 0 && currentSpeakerIndex >= 0 ? clueOrder[currentSpeakerIndex] : currentSpeakerIndex
   const currentSpeaker = speakerPlayerIdx >= 0 ? players[speakerPlayerIdx] : undefined
   const isMyTurn = currentSpeaker?.id === socket?.id
-  const lobbyPhase = 'lobby'
+  const phaseBg: Record<string, string> = {
+    LOBBY: '',
+    ASSIGNING: 'bg-gradient-to-b from-bg via-accent/3 to-bg',
+    CLUE: 'bg-gradient-to-b from-bg via-blue-950/10 to-bg',
+    DISCUSSION: 'bg-gradient-to-b from-bg via-amber-950/8 to-bg',
+    VOTING: 'bg-gradient-to-b from-bg via-error/5 to-bg',
+    REVEAL: 'bg-gradient-to-b from-bg via-error/3 to-bg',
+    RESULTS: 'bg-gradient-to-b from-bg via-success/5 to-bg',
+  }
 
   return (
     <PageTransition>
-      <div className="flex h-full flex-col bg-bg bg-ambient select-none">
+      <div className={cn('flex h-full flex-col bg-bg bg-ambient select-none', phaseBg[status] || '')}>
         <GameHeader
           roomCode={code}
           phase={status.toLowerCase() as any}
@@ -419,86 +614,197 @@ export default function App() {
           playerCount={players.length}
         />
 
+        {status !== 'LOBBY' && status !== 'ASSIGNING' && status !== 'RESULTS' && (
+          <PhaseBanner phase={bannerPhase} show={showBanner} />
+        )}
+
         <main className="relative z-10 flex-1 overflow-y-auto px-6 py-6 flex flex-col justify-center max-w-3xl mx-auto w-full">
           {/* ─── LOBBY ─── */}
           {status === 'LOBBY' && (
-            <div className="flex flex-col items-center justify-center h-full gap-8 w-full">
-              {/* Room header */}
-              <div className="flex flex-col items-center gap-4 w-full max-w-md">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-tertiary">
-                  Room Code
-                </span>
-                <div className="flex items-center gap-3 surface-card px-5 py-3 rounded-2xl">
-                  <span className="font-bold text-[28px] tracking-[0.2em] text-text-primary font-mono leading-none">{code}</span>
-                  <button onClick={handleCopyCode} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy code">
-                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-text-tertiary" />}
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                  <span className="text-[11px] text-text-secondary font-medium tracking-wide">
-                    {players.length} {players.length === 1 ? 'player' : 'players'} connected
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-center h-full gap-6 md:gap-10 w-full max-w-5xl mx-auto md:pt-8">
+              {/* Left: Room info + Players */}
+              <div className="flex flex-col items-center md:items-start gap-5 w-full md:w-auto md:flex-1 md:max-w-lg">
+                {/* Room header */}
+                <div className="flex flex-col items-center md:items-start gap-3 w-full">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-tertiary">
+                    Room Code
                   </span>
-                </div>
-              </div>
-
-              <div className="divider w-full max-w-md" />
-
-              {/* Player list */}
-              <div className="w-full max-w-md space-y-1.5">
-                {players.map((p) => (
-                  <div key={p.id} className={cn(
-                    'flex items-center justify-between px-4 py-3.5 rounded-[14px] transition-all duration-200',
-                    p.id === self?.id ? 'surface-card' : 'hover:bg-bg-secondary/30'
-                  )}>
-                    <div className="flex items-center gap-3">
-                      {p.isHost ? <Crown className="w-3.5 h-3.5 text-amber-500/80" /> : <div className="w-3.5 h-3.5" />}
-                      <span className="font-medium text-[14px] text-text-primary tracking-[-0.006em]">
-                        {p.nickname}
-                        {p.id === self?.id && <span className="text-[12px] text-text-tertiary ml-1.5 font-normal">(You)</span>}
-                      </span>
-                    </div>
-                    <span className={cn(
-                      'text-[11px] px-3 py-1 rounded-full font-medium tracking-wide',
-                      p.isReady
-                        ? 'bg-success/8 text-success'
-                        : 'text-text-tertiary'
-                    )}>
-                      {p.isReady ? 'Ready' : 'Waiting'}
+                  <div className="flex items-center gap-3 surface-card px-5 py-3 rounded-2xl">
+                    <span className="font-bold text-[28px] tracking-[0.2em] text-text-primary font-mono leading-none select-all">{code}</span>
+                    <button onClick={handleCopyCode} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy code">
+                      {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-text-tertiary" />}
+                    </button>
+                    {isHost && (
+                      <button onClick={() => { const url = `${window.location.origin}?spectate=${code}`; navigator.clipboard.writeText(url); setSpectatorCopied(true); setTimeout(() => setSpectatorCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy spectator link">
+                        {spectatorCopied ? <Check className="w-4 h-4 text-success" /> : <LogOut className="w-4 h-4 text-text-tertiary" />}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                    <span className="text-[11px] text-text-secondary font-medium tracking-wide">
+                      {players.length} {players.length === 1 ? 'player' : 'players'} connected
                     </span>
                   </div>
-                ))}
+                </div>
+
+                <div className="divider w-full" />
+
+                {/* Player list */}
+                <div className="w-full space-y-1.5 md:max-h-[55vh] md:overflow-y-auto md:pr-1">
+                  {players.map((p, idx) => {
+                    const color = getPlayerColor(p.id, idx)
+                    const isSelf = p.id === self?.id
+                    return (
+                    <div key={p.id} className={cn(
+                      'flex items-center justify-between px-4 py-3.5 rounded-[14px] transition-all duration-200',
+                      isSelf ? 'surface-card' : ''
+                    )}
+                      style={isSelf ? { boxShadow: `0 0 0 1px ${color}30, 0 4px 16px ${color}10` } : {}}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        {p.isHost ? <Crown className="w-3.5 h-3.5 text-amber-500/80 shrink-0 -ml-0.5" /> : null}
+                        <span className="font-medium text-[14px] text-text-primary tracking-[-0.006em] truncate">
+                          {p.nickname}
+                          {isSelf && <span className="text-[12px] text-text-tertiary ml-1.5 font-normal">(You)</span>}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={cn(
+                          'text-[11px] px-3 py-1 rounded-full font-medium tracking-wide',
+                          p.isReady
+                            ? 'bg-success/8 text-success'
+                            : 'text-text-tertiary'
+                        )}>
+                          {p.isReady ? 'Ready' : 'Waiting'}
+                        </span>
+                        {isHost && p.id !== self?.id && (
+                          <button onClick={() => actions.kickPlayer(p.id)} className="p-1.5 rounded-lg hover:bg-error/10 text-text-tertiary hover:text-error transition-all duration-200 cursor-pointer" title={`Kick ${p.nickname}`}>
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )})}
+                  {roomState.spectators?.length > 0 && (
+                    <div className="px-4 py-2 text-[11px] text-text-tertiary font-medium">
+                      {roomState.spectators.length} spectator{roomState.spectators.length > 1 ? 's' : ''} watching
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col items-center gap-3 w-full max-w-[280px]">
-                <button
-                  onClick={actions.toggleReady}
-                  className={cn(
-                    'w-full h-[48px] rounded-[14px] font-semibold text-[14px] transition-all duration-200 cursor-pointer',
-                    self?.isReady
-                      ? 'btn-secondary'
-                      : 'btn-primary'
-                  )}
-                >
-                  {self?.isReady ? 'Cancel Ready' : 'Ready Up'}
-                </button>
+              {/* Right: Actions panel */}
+              <div className="flex flex-col items-center md:items-stretch gap-3 w-full md:w-72 md:sticky md:top-8">
+                <div className="w-full surface-card rounded-2xl p-5 space-y-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary text-center md:text-left">Ready Up</p>
 
-                {isHost && (
-                  <>
-                    <button
-                      onClick={actions.startGame}
-                      disabled={!players.every(p => p.isReady) || players.length < 4}
-                      className="w-full btn-primary flex items-center justify-center gap-2"
+                  {!settings.autoReady && (
+                    <motion.button
+                      onClick={() => { actions.toggleReady(); haptic(10) }}
+                      whileTap={self?.isReady ? {} : { scale: 0.97 }}
+                      className={cn(
+                        'w-full h-[48px] rounded-[14px] font-semibold text-[14px] transition-all duration-200 cursor-pointer relative overflow-hidden',
+                        self?.isReady
+                          ? 'btn-secondary'
+                          : 'btn-primary'
+                      )}
                     >
-                      <Play className="w-4 h-4 fill-current" /> Start Game
-                    </button>
-                    {(!players.every(p => p.isReady) || players.length < 4) && (
-                      <p className="text-[11px] text-center text-text-tertiary leading-snug tracking-[-0.003em] opacity-70">
-                        Need at least 4 players. All must be ready.
-                      </p>
-                    )}
-                  </>
+                      {self?.isReady ? 'Cancel Ready' : 'Ready Up'}
+                    </motion.button>
+                  )}
+
+                  {isHost && (
+                    <div className="space-y-3 pt-1">
+                      <button
+                        onClick={actions.startGame}
+                        disabled={players.length < 4}
+                        className="w-full btn-primary flex items-center justify-center gap-2"
+                      >
+                        <Play className="w-4 h-4 fill-current" /> Start Game
+                      </button>
+                      {players.length < 4 && (
+                        <p className="text-[11px] text-center text-text-tertiary leading-snug tracking-[-0.003em] opacity-70">
+                          Need at least 4 players
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={settings.autoReady}
+                            onChange={(e) => actions.updateSettings({ autoReady: e.target.checked })}
+                            className="w-4 h-4 rounded border-border bg-bg-tertiary/40 accent-accent cursor-pointer"
+                          />
+                          <span className="text-[11px] text-text-secondary font-medium whitespace-nowrap">Auto-ready</span>
+                        </label>
+                        <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1.5 text-[11px] text-text-tertiary hover:text-text-primary transition-colors duration-200 cursor-pointer">
+                          <Settings className="w-3.5 h-3.5" /> Settings
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {showSettings && isHost && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full surface-card rounded-2xl p-4 space-y-3"
+                  >
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary">Timers (s)</p>
+                    {(['clueTimeSeconds', 'discussTimeSeconds', 'voteTimeSeconds'] as const).map(key => (
+                      <div key={key} className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-text-secondary font-medium">{key.replace('TimeSeconds', '').replace(/([A-Z])/g, ' $1').trim()}</span>
+                        <input type="number" min={10} max={300} step={5} value={settings[key]}
+                          onChange={(e) => actions.updateSettings({ [key]: Math.max(10, Math.min(300, parseInt(e.target.value) || 10)) })}
+                          className="w-14 text-center input-premium !py-0.5 !text-[11px]"
+                        />
+                      </div>
+                    ))}
+                    <div className="divider" />
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary">Game</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-text-secondary font-medium">Echoes</span>
+                      <input type="number" min={1} max={3} value={settings.numEchoes}
+                        onChange={(e) => actions.updateSettings({ numEchoes: Math.max(1, Math.min(3, parseInt(e.target.value) || 1)) })}
+                        className="w-14 text-center input-premium !py-0.5 !text-[11px]"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-text-secondary font-medium">Difficulty</span>
+                      <select value={settings.wordDifficulty}
+                        onChange={(e) => actions.updateSettings({ wordDifficulty: e.target.value as any })}
+                        className="input-premium !py-0.5 !text-[11px] w-auto"
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="normal">Normal</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-text-secondary font-medium">Word Pack</span>
+                      <select value={settings.wordPack}
+                        onChange={(e) => actions.updateSettings({ wordPack: e.target.value })}
+                        className="input-premium !py-0.5 !text-[11px] w-auto"
+                      >
+                        <option value="mixed">Mixed</option>
+                        <option value="animals">Animals</option>
+                        <option value="food">Food</option>
+                        <option value="nature">Nature</option>
+                        <option value="objects">Objects</option>
+                        <option value="fantasy">Fantasy</option>
+                      </select>
+                    </div>
+                    <label className="flex items-center justify-between gap-2 cursor-pointer select-none">
+                      <span className="text-[11px] text-text-secondary font-medium">Voice Chat</span>
+                      <input type="checkbox" checked={settings.enableVoice}
+                        onChange={(e) => actions.updateSettings({ enableVoice: e.target.checked })}
+                        className="w-4 h-4 rounded border-border bg-bg-tertiary/40 accent-accent cursor-pointer"
+                      />
+                    </label>
+                  </motion.div>
                 )}
               </div>
             </div>
@@ -506,7 +812,30 @@ export default function App() {
 
           {/* ─── ASSIGNING ─── */}
           {status === 'ASSIGNING' && (
-            <div className="flex flex-col items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full gap-6">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className={cn(
+                  'rounded-[20px] p-4 px-8 text-center',
+                  self?.isEcho
+                    ? 'bg-error/10 border border-error/20'
+                    : 'bg-success/10 border border-success/20'
+                )}
+              >
+                <span className="text-[13px] font-extrabold uppercase tracking-[0.15em]">
+                  {self?.isEcho ? 'You are the Echo' : 'You are a Commoner'}
+                </span>
+              </motion.div>
+              <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
+                <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                  The Word Is
+                </p>
+                <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                  {publicWord}
+                </p>
+              </div>
               <WordReveal word={self?.word || null} visible />
             </div>
           )}
@@ -514,6 +843,14 @@ export default function App() {
           {/* ─── CLUE PHASE ─── */}
           {status === 'CLUE' && (
             <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
+              <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
+                <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                  The Word Is
+                </p>
+                <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                  {publicWord}
+                </p>
+              </div>
               <WordReveal word={self?.word || null} visible />
 
               <div className="text-center mt-3">
@@ -526,23 +863,43 @@ export default function App() {
               </div>
 
               {isMyTurn && !self?.hasSpoken && (
-                <div className="flex gap-2.5 w-full surface-elevated p-2.5 rounded-2xl mt-3">
-                  <input
-                    type="text"
-                    value={clueText}
-                    onChange={(e) => setClueText(e.target.value.slice(0, 20))}
-                    onKeyDown={(e) => e.key === 'Enter' && clueText.trim() && actions.submitClue(clueText.trim())}
-                    placeholder="Type your clue..."
-                    className="flex-1 input-premium"
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => clueText.trim() && actions.submitClue(clueText.trim())}
-                    disabled={!clueText.trim()}
-                    className="btn-primary !h-[52px] !px-7"
+                <div className="w-full mt-3">
+                  <motion.div
+                    className={cn('flex gap-2.5 w-full surface-elevated p-2.5 rounded-2xl', clueShake ? 'border border-error/40' : '')}
+                    animate={clueShake ? { x: [0, -4, 4, -4, 4, 0] } : {}}
+                    transition={{ duration: 0.3 }}
                   >
-                    Submit
-                  </button>
+                    <input
+                      type="text"
+                      value={clueText}
+                      onChange={(e) => {
+                        const val = e.target.value.slice(0, 20)
+                        setClueText(val)
+                        if (publicWord && val.toLowerCase().includes(publicWord.toLowerCase())) {
+                          setClueShake(true)
+                          setTimeout(() => setClueShake(false), 600)
+                          playBeep('vote')
+                        }
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && clueText.trim() && !clueShake && actions.submitClue(clueText.trim())}
+                      placeholder="Type your clue..."
+                      className="flex-1 input-premium"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => clueText.trim() && !clueShake && actions.submitClue(clueText.trim())}
+                      disabled={!clueText.trim()}
+                      className="btn-primary !h-[52px] !px-7"
+                    >
+                      Submit
+                    </button>
+                  </motion.div>
+                  <div className="flex justify-between px-1 mt-1.5">
+                    <span className="text-[10px] text-text-tertiary font-medium">{clueText.length}/20</span>
+                    {publicWord && clueText.toLowerCase().includes(publicWord.toLowerCase()) && (
+                      <span className="text-[10px] text-error/80 font-semibold">Don't type the word!</span>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -553,23 +910,51 @@ export default function App() {
                 </div>
               )}
 
+              {/* Speaker queue */}
+              {clueOrder?.length > 0 && (
+                <div className="w-full flex items-center justify-center gap-1.5 mt-1">
+                  {clueOrder.map((playerIdx, orderIdx) => {
+                    const p = players[playerIdx]
+                    if (!p) return null
+                    const isPast = orderIdx < currentSpeakerIndex
+                    const isCurrent = orderIdx === currentSpeakerIndex
+                    const isUpcoming = orderIdx > currentSpeakerIndex
+                    return (
+                      <div
+                        key={orderIdx}
+                        className={cn(
+                          'w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold transition-all duration-300',
+                          isCurrent ? 'ring-2 ring-offset-1 ring-offset-bg scale-110' : '',
+                          isPast ? 'opacity-30' : '',
+                          isUpcoming ? 'opacity-50' : ''
+                        )}
+                        style={{ backgroundColor: `${getPlayerColor(p.id, playerIdx)}30`, color: getPlayerColor(p.id, playerIdx) }}
+                        title={p.nickname}
+                      >
+                        {p.nickname.charAt(0).toUpperCase()}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
               <Timer durationSeconds={settings.clueTimeSeconds} running paused={self?.hasSpoken || !isMyTurn} />
             </div>
           )}
 
           {/* ─── DISCUSSION ─── */}
           {status === 'DISCUSSION' && (
-            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
+            <div className="flex flex-col items-center max-w-lg mx-auto gap-4 pt-4 w-full">
               <div className="text-center">
                 <h2 className="text-[17px] font-semibold text-text-primary tracking-[-0.02em]">Discussion</h2>
                 <p className="text-[13px] text-text-secondary mt-1.5 tracking-[-0.003em]">All clues have been given. Discuss who sounds suspicious.</p>
               </div>
 
-              <div className="w-full space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
+              <div className="w-full space-y-1.5 max-h-[30vh] overflow-y-auto pr-1">
                 {clues.map((c) => {
                   const p = players.find(pl => pl.id === c.playerId)
                   return (
-                    <div key={c.playerId} className="flex items-center gap-3 rounded-[14px] surface-card p-4 hover:border-border-hover/30 transition-colors duration-200">
+                    <div key={c.playerId} className="flex items-center gap-3 rounded-[14px] surface-card p-4 transition-colors duration-200">
                       <div className="min-w-0 flex-1">
                         <span className="text-[13px] font-semibold text-text-primary tracking-[-0.006em]">{p?.nickname || 'Unknown'}</span>
                         <p className="text-[13px] text-text-secondary mt-0.5 tracking-[-0.003em]">{c.clue}</p>
@@ -577,6 +962,36 @@ export default function App() {
                     </div>
                   )
                 })}
+              </div>
+
+              {/* Chat */}
+              {roomState.chatMessages && (
+                <div className="w-full max-h-[25vh] overflow-y-auto space-y-1 pr-1 border-t border-border pt-3">
+                  {roomState.chatMessages.map((msg, i) => {
+                    const player = players.find(p => p.id === msg.playerId)
+                    const color = player ? getPlayerColor(player.id, players.indexOf(player)) : undefined
+                    const highlighted = msg.text.replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
+                    return (
+                      <div key={i} className="flex items-start gap-2 px-1">
+                        <span className="text-[11px] font-semibold shrink-0" style={color ? { color } : {}}>{msg.nickname}:</span>
+                        <span className="text-[11px] text-text-secondary leading-[1.5]" dangerouslySetInnerHTML={{ __html: highlighted }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="flex gap-2 w-full surface-elevated p-2 rounded-2xl">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value.slice(0, 200))}
+                  onKeyDown={(e) => e.key === 'Enter' && chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))}
+                  placeholder='Chat... (@name to mention)'
+                  className="flex-1 input-premium !py-2"
+                />
+                <button onClick={() => chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))} disabled={!chatInput.trim()} className="btn-primary !h-auto !px-4 !py-2 cursor-pointer">
+                  <Send className="w-3.5 h-3.5" />
+                </button>
               </div>
 
               <button
@@ -592,7 +1007,7 @@ export default function App() {
 
           {/* ─── VOTING ─── */}
           {status === 'VOTING' && (
-            <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
+            <div className="flex flex-col items-center max-w-lg mx-auto gap-4 pt-4 w-full">
               <div className="text-center">
                 <h2 className="text-[17px] font-semibold text-text-primary tracking-[-0.02em]">Vote</h2>
                 <p className="text-[13px] text-text-secondary mt-1.5 tracking-[-0.003em]">Who is the Echo?</p>
@@ -620,6 +1035,36 @@ export default function App() {
                 )
               })()}
 
+              {/* Chat during voting */}
+              {roomState.chatMessages && (
+                <div className="w-full max-h-[15vh] overflow-y-auto space-y-1 pr-1 border-t border-border pt-3">
+                  {roomState.chatMessages.map((msg, i) => {
+                    const player = players.find(p => p.id === msg.playerId)
+                    const color = player ? getPlayerColor(player.id, players.indexOf(player)) : undefined
+                    const highlighted = msg.text.replace(/@(\w+)/g, '<span class="text-accent font-semibold">@$1</span>')
+                    return (
+                      <div key={i} className="flex items-start gap-2 px-1">
+                        <span className="text-[11px] font-semibold shrink-0" style={color ? { color } : {}}>{msg.nickname}:</span>
+                        <span className="text-[11px] text-text-secondary leading-[1.5]" dangerouslySetInnerHTML={{ __html: highlighted }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="flex gap-2 w-full surface-elevated p-2 rounded-2xl">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value.slice(0, 200))}
+                  onKeyDown={(e) => e.key === 'Enter' && chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))}
+                  placeholder='Chat... (@name to mention)'
+                  className="flex-1 input-premium !py-2"
+                />
+                <button onClick={() => chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))} disabled={!chatInput.trim()} className="btn-primary !h-auto !px-4 !py-2 cursor-pointer">
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <Timer durationSeconds={settings.voteTimeSeconds} running />
             </div>
           )}
@@ -628,12 +1073,41 @@ export default function App() {
           {status === 'REVEAL' && (
             <div className="flex flex-col items-center justify-center h-full">
               <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 className="text-center"
               >
-                <p className="text-sm font-semibold tracking-wide text-text-secondary mb-4 uppercase">The votes are in...</p>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="text-sm font-semibold tracking-wide text-text-secondary mb-4 uppercase"
+                >
+                  The votes are in...
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center justify-center gap-1"
+                >
+                  {revealedEchoId ? (
+                    <span className="text-[48px] font-extrabold text-accent tracking-[-0.04em]">Revealed</span>
+                  ) : (
+                    <span className="text-[48px] font-extrabold text-text-primary tracking-[-0.04em]">Tie</span>
+                  )}
+                </motion.div>
+                {winnerId && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.0, duration: 0.5 }}
+                    className="text-[15px] text-text-secondary mt-4 font-semibold"
+                  >
+                    {winnerId === 'VILLAGERS' ? 'The villagers win!' : 'The Echo escapes!'}
+                  </motion.p>
+                )}
               </motion.div>
             </div>
           )}
@@ -679,6 +1153,61 @@ export default function App() {
             {isConnected ? 'Connected' : 'Disconnected'}
           </div>
         </div>
+
+        {/* ─── Mobile Chat Sheet ─── */}
+        {(status === 'DISCUSSION' || status === 'VOTING') && (
+          <>
+            <button
+              onClick={() => setShowMobileChat(!showMobileChat)}
+              className="fixed bottom-20 right-4 z-40 bg-accent text-white p-3 rounded-full shadow-lg sm:hidden cursor-pointer"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </button>
+            <AnimatePresence>
+              {showMobileChat && (
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  className="fixed inset-x-0 bottom-0 z-50 h-[50vh] bg-bg border-t border-border rounded-t-2xl shadow-2xl sm:hidden flex flex-col"
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <span className="text-[12px] font-semibold text-text-primary">Chat</span>
+                    <button onClick={() => setShowMobileChat(false)} className="text-text-tertiary hover:text-text-primary cursor-pointer">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                    {roomState.chatMessages?.map((msg, i) => {
+                      const player = players.find(p => p.id === msg.playerId)
+                      const color = player ? getPlayerColor(player.id, players.indexOf(player)) : undefined
+                      return (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-[11px] font-semibold shrink-0" style={color ? { color } : {}}>{msg.nickname}:</span>
+                          <span className="text-[11px] text-text-secondary">{msg.text}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-2 p-3 border-t border-border">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value.slice(0, 200))}
+                      onKeyDown={(e) => e.key === 'Enter' && chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))}
+                      placeholder="Chat..."
+                      className="flex-1 input-premium !py-2 text-sm"
+                    />
+                    <button onClick={() => chatInput.trim() && (actions.sendChatMessage(chatInput.trim()), setChatInput(''))} disabled={!chatInput.trim()} className="btn-primary !h-auto !px-4 !py-2 cursor-pointer">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
 
         <AnimatePresence>
           {error && (

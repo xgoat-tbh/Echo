@@ -15,6 +15,7 @@ export interface Player {
   voteTarget: string | null
   isEcho: boolean
   isMuted: boolean
+  eliminated: boolean
 }
 
 export interface RoomState {
@@ -25,6 +26,11 @@ export interface RoomState {
     clueTimeSeconds: number
     discussTimeSeconds: number
     voteTimeSeconds: number
+    autoReady: boolean
+    numEchoes: number
+    wordDifficulty: 'easy' | 'normal' | 'hard'
+    wordPack: string
+    enableVoice: boolean
   }
   currentRound: number
   currentSpeakerIndex: number
@@ -36,6 +42,8 @@ export interface RoomState {
   timerValue: number
   clues: { playerId: string; clue: string }[]
   votes: { voterId: string; targetId: string }[]
+  chatMessages: { playerId: string; nickname: string; text: string; timestamp: number }[]
+  spectators: string[]
   players: Player[]
 }
 
@@ -48,6 +56,7 @@ export function useSocket() {
   const [voiceOffer, setVoiceOffer] = useState<{ senderId: string; offer: any } | null>(null)
   const [voiceAnswer, setVoiceAnswer] = useState<{ senderId: string; answer: any } | null>(null)
   const [iceCandidate, setIceCandidate] = useState<{ senderId: string; candidate: any } | null>(null)
+  const roomListRef = useRef<any[]>([])
 
   const socketRef = useRef<Socket | null>(null)
 
@@ -106,6 +115,15 @@ export function useSocket() {
 
     socket.on('ice_candidate', ({ senderId, candidate }) => {
       setIceCandidate({ senderId, candidate })
+    })
+
+    socket.on('kicked', () => {
+      setRoomState(null)
+      socket.disconnect()
+    })
+
+    socket.on('room_list', (rooms: any[]) => {
+      roomListRef.current = rooms
     })
 
     return () => {
@@ -192,6 +210,42 @@ export function useSocket() {
     }
   }, [])
 
+  const updateSettings = useCallback((settings: Partial<RoomState['settings']>) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('update_settings', settings)
+    }
+  }, [])
+
+  const kickPlayer = useCallback((targetId: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('kick_player', { targetId })
+    }
+  }, [])
+
+  const sendChatMessage = useCallback((text: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('chat_message', { text })
+    }
+  }, [])
+
+  const joinAsSpectator = useCallback((code: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('join_as_spectator', { code })
+    }
+  }, [])
+
+  const listRooms = useCallback(() => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('list_rooms')
+    }
+  }, [])
+
+  const reconnect = useCallback((code: string, nickname: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('reconnect', { code, nickname })
+    }
+  }, [])
+
   return {
     socket: socketRef.current,
     roomState,
@@ -215,6 +269,13 @@ export function useSocket() {
       relayVoiceOffer,
       relayVoiceAnswer,
       relayIceCandidate,
+      updateSettings,
+      kickPlayer,
+      sendChatMessage,
+      joinAsSpectator,
+      listRooms,
+      reconnect,
     },
+    roomList: roomListRef.current,
   }
 }

@@ -57,25 +57,34 @@ export function Timer({ durationSeconds, running, onExpire, paused }: TimerProps
   const pct = durationSeconds > 0 ? remaining / durationSeconds : 0
   const urgent = remaining <= 10
 
+  const radius = 22
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference * (1 - pct)
+
+  const display = `${minutes}:${seconds.toString().padStart(2, '0')}`
+
   return (
-    <div className="flex items-center gap-3 surface-card px-4 py-2 rounded-full select-none">
-      <div className="h-[3px] w-20 rounded-full bg-bg-tertiary/60 overflow-hidden">
-        <div
-          className={cn(
-            'h-full rounded-full transition-all duration-1000 linear',
-            urgent ? 'bg-error/80' : 'bg-text-primary/40'
-          )}
-          style={{ width: `${pct * 100}%` }}
-        />
+    <div className="flex items-center justify-center select-none">
+      <div className="relative flex items-center justify-center">
+        <svg width="60" height="60" viewBox="0 0 60 60" className="transform -rotate-90">
+          <circle cx="30" cy="30" r={radius} fill="none" stroke="currentColor" className="text-bg-tertiary/40" strokeWidth="3" />
+          <circle
+            cx="30" cy="30" r={radius} fill="none"
+            stroke="currentColor"
+            className={cn('transition-all duration-1000 linear', urgent ? 'text-error/80' : 'text-text-primary/40')}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+          />
+        </svg>
+        <span className={cn(
+          'absolute text-[13px] font-mono font-bold tabular-nums',
+          urgent ? 'text-error/80' : 'text-text-primary'
+        )}>
+          {display}
+        </span>
       </div>
-      <span
-        className={cn(
-          'text-[11px] font-mono font-medium tabular-nums tracking-[0.05em]',
-          urgent ? 'text-error/80' : 'text-text-tertiary'
-        )}
-      >
-        {minutes}:{seconds.toString().padStart(2, '0')}
-      </span>
     </div>
   )
 }

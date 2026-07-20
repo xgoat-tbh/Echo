@@ -15,6 +15,7 @@ export interface Player {
   voteTarget: string | null
   isEcho: boolean
   isMuted: boolean
+  eliminated: boolean
 }
 
 export interface GameRoom {
@@ -26,6 +27,11 @@ export interface GameRoom {
     clueTimeSeconds: number
     discussTimeSeconds: number
     voteTimeSeconds: number
+    autoReady: boolean
+    numEchoes: number
+    wordDifficulty: 'easy' | 'normal' | 'hard'
+    wordPack: string
+    enableVoice: boolean
   }
   currentRound: number
   currentSpeakerIndex: number
@@ -33,12 +39,13 @@ export interface GameRoom {
   wordPair: WordPair | null
   clues: { playerId: string; clue: string }[]
   votes: { voterId: string; targetId: string }[]
+  chatMessages: { playerId: string; nickname: string; text: string; timestamp: number }[]
   revealedEchoId: string | null
   winnerId: string | null
   timerInterval: ReturnType<typeof setInterval> | null
   timerValue: number
-  // Track echo identity across play-again
-  echoPlayerId: string | null
+  echoPlayerIds: string[]
+  spectators: string[]
 }
 
 export const rooms = new Map<string, GameRoom>()
@@ -76,6 +83,7 @@ export function generateRoomCode(): string {
 export function getFilteredRoomState(room: GameRoom, playerId: string) {
   const isEnded = room.status === 'REVEAL' || room.status === 'RESULTS'
   const showClues = room.status !== 'LOBBY' && room.status !== 'ASSIGNING'
+  const isSpectator = room.spectators.includes(playerId)
 
   return {
     code: room.code,
@@ -85,12 +93,13 @@ export function getFilteredRoomState(room: GameRoom, playerId: string) {
     currentSpeakerIndex: room.currentSpeakerIndex,
     clueOrder: (room.status === 'CLUE' || room.status === 'DISCUSSION') ? room.clueOrder : [],
     publicWord: room.status !== 'LOBBY' ? room.wordPair?.word ?? null : null,
-    echoWord: isEnded ? room.wordPair?.echo ?? null : null,
+    echoWord: (isEnded || isSpectator) ? room.wordPair?.echo ?? null : null,
     revealedEchoId: room.revealedEchoId,
     winnerId: room.winnerId,
     timerValue: room.timerValue,
     clues: showClues ? room.clues : [],
     votes: isEnded ? room.votes : [],
+    chatMessages: room.chatMessages.slice(-50),
     players: room.players.map(p => {
       const isSelf = p.id === playerId
       return {
@@ -99,14 +108,16 @@ export function getFilteredRoomState(room: GameRoom, playerId: string) {
         isHost: p.isHost,
         isReady: p.isReady,
         word: (isSelf || isEnded) ? p.word : null,
-        clue: (p.clue && showClues) ? p.clue : null,
+        clue: (p.clue && showClues && !isSpectator) ? p.clue : null,
         hasSpoken: p.hasSpoken,
         hasVoted: p.hasVoted,
         voteTarget: (isSelf || isEnded) ? p.voteTarget : (p.voteTarget ? '__voted__' : null),
-        isEcho: (isSelf || isEnded) ? p.isEcho : false,
+        isEcho: (isSelf || isEnded || isSpectator) ? p.isEcho : false,
         isMuted: p.isMuted,
+        eliminated: p.eliminated,
       }
     }),
+    spectators: room.spectators,
   }
 }
 
@@ -114,6 +125,9 @@ function broadcastRoomState(room: GameRoom) {
   const i = getIO()
   room.players.forEach(p => {
     i.to(p.id).emit('room_updated', getFilteredRoomState(room, p.id))
+  })
+  room.spectators.forEach(sId => {
+    i.to(sId).emit('room_updated', getFilteredRoomState(room, sId))
   })
 }
 
@@ -145,9 +159,13 @@ function startTimer(room: GameRoom, seconds: number, onEnd: () => void) {
 
 function findPlayerRoom(socketId: string): GameRoom | null {
   for (const room of rooms.values()) {
-    if (room.players.some(p => p.id === socketId)) return room
+    if (room.players.some(p => p.id === socketId) || room.spectators.includes(socketId)) return room
   }
   return null
+}
+
+function getActivePlayers(room: GameRoom): Player[] {
+  return room.players.filter(p => !p.eliminated)
 }
 
 // --- Event Handlers ---
@@ -166,6 +184,7 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     voteTarget: null,
     isEcho: false,
     isMuted: false,
+    eliminated: false,
   }
 
   const room: GameRoom = {
@@ -177,6 +196,11 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
       clueTimeSeconds: 30,
       discussTimeSeconds: 60,
       voteTimeSeconds: 30,
+      autoReady: false,
+      numEchoes: 1,
+      wordDifficulty: 'normal',
+      wordPack: 'mixed',
+      enableVoice: true,
     },
     currentRound: 1,
     currentSpeakerIndex: 0,
@@ -184,11 +208,13 @@ export function handleCreateRoom(socket: Socket, nickname: string) {
     wordPair: null,
     clues: [],
     votes: [],
+    chatMessages: [],
     revealedEchoId: null,
     winnerId: null,
     timerInterval: null,
     timerValue: 0,
-    echoPlayerId: null,
+    echoPlayerIds: [],
+    spectators: [],
   }
 
   rooms.set(code, room)
@@ -227,6 +253,7 @@ export function handleJoinRoom(socket: Socket, code: string, nickname: string) {
     voteTarget: null,
     isEcho: false,
     isMuted: false,
+    eliminated: false,
   }
 
   room.players.push(player)
@@ -238,48 +265,36 @@ export function handleToggleReady(socketId: string) {
   const room = findPlayerRoom(socketId)
   if (!room) return
   const player = room.players.find(p => p.id === socketId)
-  if (!player) return
+  if (!player || player.eliminated) return
   player.isReady = !player.isReady
   broadcastRoomState(room)
 }
 
-export function handleStartGame(socketId: string) {
-  const room = findPlayerRoom(socketId)
-  if (!room) return
-  const host = room.players.find(p => p.id === socketId && p.isHost)
-  if (!host) {
-    getIO().to(socketId).emit('game_error', 'Only the host can start the game.')
+function startNewRound(room: GameRoom) {
+  const active = getActivePlayers(room)
+  if (active.length < 3) {
+    // Only 2 or fewer active players left — Echo wins
+    room.status = 'REVEAL'
+    room.revealedEchoId = null
+    room.winnerId = 'ECHO'
+    broadcastRoomState(room)
+    setTimeout(() => {
+      const r = rooms.get(room.code)
+      if (!r || r.status !== 'REVEAL') return
+      r.status = 'RESULTS'
+      broadcastRoomState(r)
+    }, 5000)
     return
   }
 
-  const allReady = room.players.every(p => p.isReady)
-  if (!allReady) {
-    getIO().to(socketId).emit('game_error', 'All players must be ready.')
-    return
-  }
-
-  if (room.players.length < 4) {
-    getIO().to(socketId).emit('game_error', 'Need at least 4 players.')
-    return
-  }
-
-  const pair = getRandomWordPair()
+  const pair = getRandomWordPair(room.settings.wordDifficulty, room.settings.wordPack)
   room.wordPair = pair
   room.status = 'ASSIGNING'
+  room.currentRound++
 
-  // Pick Echo — use existing echoPlayerId if set (from play-again), else random
-  let echoIdx: number
-  if (room.echoPlayerId) {
-    const existing = room.players.findIndex(p => p.id === room.echoPlayerId)
-    echoIdx = existing >= 0 ? existing : Math.floor(Math.random() * room.players.length)
-  } else {
-    echoIdx = Math.floor(Math.random() * room.players.length)
-  }
-  room.echoPlayerId = room.players[echoIdx].id
-
-  room.players.forEach((p, i) => {
-    p.isEcho = i === echoIdx
-    p.word = i === echoIdx ? pair.echo : pair.word
+  // Reset per-round state
+  active.forEach(p => {
+    p.word = null
     p.clue = null
     p.hasSpoken = false
     p.hasVoted = false
@@ -292,12 +307,21 @@ export function handleStartGame(socketId: string) {
   room.revealedEchoId = null
   room.winnerId = null
 
-  // Randomize clue speaking order — Echo must not be first
-  let order = shuffleArray(room.players.map((_, i) => i))
-  const echoPos = order.indexOf(echoIdx)
-  if (echoPos === 0) {
-    // Swap with second position
-    [order[0], order[1]] = [order[1], order[0]]
+  // Assign words to active players only
+  active.forEach((p, i) => {
+    p.isEcho = room.echoPlayerIds.includes(p.id)
+    p.word = p.isEcho ? pair.echo : pair.word
+  })
+
+  // Clue order for active players
+  const activeIndices = active.map((_, i) => i)
+  let order = shuffleArray(activeIndices)
+  const echoIdx = active.findIndex(p => p.isEcho)
+  if (echoIdx >= 0) {
+    const echoPos = order.indexOf(echoIdx)
+    if (echoPos === 0 && order.length > 1) {
+      [order[0], order[1]] = [order[1], order[0]]
+    }
   }
   room.clueOrder = order
 
@@ -313,10 +337,50 @@ export function handleStartGame(socketId: string) {
   }, 3000)
 }
 
+export function handleStartGame(socketId: string) {
+  const room = findPlayerRoom(socketId)
+  if (!room) return
+  const host = room.players.find(p => p.id === socketId && p.isHost)
+  if (!host) {
+    getIO().to(socketId).emit('game_error', 'Only the host can start the game.')
+    return
+  }
+
+  if (!room.settings.autoReady) {
+    const allReady = room.players.every(p => p.isReady)
+    if (!allReady) {
+      getIO().to(socketId).emit('game_error', 'All players must be ready.')
+      return
+    }
+  }
+
+  const active = room.players
+  if (active.length < 4) {
+    getIO().to(socketId).emit('game_error', 'Need at least 4 players.')
+    return
+  }
+
+  // Reset all players
+  room.players.forEach(p => {
+    p.eliminated = false
+    p.isEcho = false
+  })
+
+  // Select Echoes
+  const numEchoes = Math.min(room.settings.numEchoes, Math.floor(active.length / 2))
+  const shuffled = shuffleArray(active.map((_, i) => i))
+  const echoIndices = shuffled.slice(0, numEchoes)
+  room.echoPlayerIds = echoIndices.map(i => active[i].id)
+  echoIndices.forEach(i => { active[i].isEcho = true })
+
+  startNewRound(room)
+}
+
 function getCurrentCluePlayer(room: GameRoom): Player | null {
   if (room.currentSpeakerIndex < 0 || room.currentSpeakerIndex >= room.clueOrder.length) return null
+  const active = getActivePlayers(room)
   const playerIdx = room.clueOrder[room.currentSpeakerIndex]
-  return room.players[playerIdx] ?? null
+  return active[playerIdx] ?? null
 }
 
 function startClueTimer(room: GameRoom) {
@@ -333,8 +397,9 @@ function advanceClue(roomCode: string) {
 
   let nextIdx = room.currentSpeakerIndex + 1
   while (nextIdx < room.clueOrder.length) {
+    const active = getActivePlayers(room)
     const pIdx = room.clueOrder[nextIdx]
-    if (!room.players[pIdx]?.hasSpoken) break
+    if (active[pIdx] && !active[pIdx].hasSpoken) break
     nextIdx++
   }
 
@@ -383,7 +448,7 @@ function transitionToVoting(roomCode: string) {
   if (!room) return
 
   room.status = 'VOTING'
-  room.players.forEach(p => { p.voteTarget = null; p.hasVoted = false })
+  getActivePlayers(room).forEach(p => { p.voteTarget = null; p.hasVoted = false })
   room.votes = []
   broadcastRoomState(room)
 
@@ -397,10 +462,10 @@ export function handleCastVote(socketId: string, targetId: string) {
   if (!room || room.status !== 'VOTING') return
 
   const voter = room.players.find(p => p.id === socketId)
-  if (!voter || voter.hasVoted) return
+  if (!voter || voter.hasVoted || voter.eliminated) return
 
   const target = room.players.find(p => p.id === targetId)
-  if (!target) return
+  if (!target || target.eliminated) return
 
   voter.voteTarget = targetId
   voter.hasVoted = true
@@ -408,7 +473,8 @@ export function handleCastVote(socketId: string, targetId: string) {
 
   broadcastRoomState(room)
 
-  const allVoted = room.players.every(p => p.hasVoted)
+  const active = getActivePlayers(room)
+  const allVoted = active.every(p => p.hasVoted)
   if (allVoted) {
     clearTimer(room)
     finishVoting(room.code)
@@ -421,8 +487,10 @@ function finishVoting(roomCode: string) {
 
   room.status = 'REVEAL'
 
+  const active = getActivePlayers(room)
   const voteCounts: Record<string, number> = {}
-  room.votes.forEach(v => {
+  // Only count votes from active players
+  room.votes.filter(v => active.some(p => p.id === v.voterId)).forEach(v => {
     voteCounts[v.targetId] = (voteCounts[v.targetId] || 0) + 1
   })
 
@@ -437,17 +505,52 @@ function finishVoting(roomCode: string) {
     ? candidates[Math.floor(Math.random() * candidates.length)]
     : null
 
-  room.revealedEchoId = eliminatedId
-
   if (eliminatedId) {
     const eliminatedPlayer = room.players.find(p => p.id === eliminatedId)
-    if (eliminatedPlayer?.isEcho) {
+    if (eliminatedPlayer) eliminatedPlayer.eliminated = true
+    room.revealedEchoId = eliminatedId
+  } else {
+    room.revealedEchoId = null
+  }
+
+  // Check win conditions
+  const remainingActive = getActivePlayers(room)
+  const remainingEchoes = remainingActive.filter(p => room.echoPlayerIds.includes(p.id))
+
+  if (eliminatedId && room.echoPlayerIds.includes(eliminatedId)) {
+    // An Echo was eliminated
+    if (remainingEchoes.length === 0) {
       room.winnerId = 'VILLAGERS'
     } else {
-      room.winnerId = eliminatedPlayer ? 'ECHO' : 'VILLAGERS'
+      // Echoes still alive, check count
+      const remainingCommoners = remainingActive.length - remainingEchoes.length
+      if (remainingEchoes.length >= remainingCommoners) {
+        room.winnerId = 'ECHO'
+      } else {
+        // Continue to next round
+        broadcastRoomState(room)
+        setTimeout(() => {
+          const r = rooms.get(room.code)
+          if (!r || r.status !== 'REVEAL') return
+          startNewRound(r)
+        }, 4000)
+        return
+      }
     }
   } else {
-    room.winnerId = 'ECHO'
+    // Non-Echo eliminated or tie
+    if (remainingEchoes.length >= remainingActive.length - remainingEchoes.length) {
+      room.winnerId = 'ECHO'
+    } else {
+      // Continue to next round
+      broadcastRoomState(room)
+      setTimeout(() => {
+        const r = rooms.get(room.code)
+        if (!r || r.status !== 'REVEAL') return
+        startNewRound(r)
+      }, 4000)
+      return
+    }
   }
 
   broadcastRoomState(room)
@@ -473,12 +576,13 @@ export function handlePlayAgain(socketId: string) {
   room.wordPair = null
   room.clues = []
   room.votes = []
+  room.chatMessages = []
   room.revealedEchoId = null
   room.winnerId = null
   room.currentSpeakerIndex = 0
   room.clueOrder = []
+  room.echoPlayerIds = []
 
-  // Keep isEcho and echoPlayerId fixed across rounds
   room.players.forEach(p => {
     p.word = null
     p.clue = null
@@ -486,6 +590,8 @@ export function handlePlayAgain(socketId: string) {
     p.hasVoted = false
     p.voteTarget = null
     p.isReady = p.isHost
+    p.isEcho = false
+    p.eliminated = false
   })
 
   broadcastRoomState(room)
@@ -500,42 +606,166 @@ export function handleToggleMute(socketId: string, isMuted: boolean) {
   broadcastRoomState(room)
 }
 
+export function handleUpdateSettings(socketId: string, settings: Partial<GameRoom['settings']>) {
+  const room = findPlayerRoom(socketId)
+  if (!room) return
+  const host = room.players.find(p => p.id === socketId && p.isHost)
+  if (!host) return
+  if (room.status !== 'LOBBY') return
+
+  Object.assign(room.settings, settings)
+  broadcastRoomState(room)
+}
+
+export function handleKickPlayer(socketId: string, targetId: string) {
+  const room = findPlayerRoom(socketId)
+  if (!room) return
+  const host = room.players.find(p => p.id === socketId && p.isHost)
+  if (!host || host.id === targetId) return
+  if (room.status !== 'LOBBY') return
+
+  const target = room.players.findIndex(p => p.id === targetId)
+  if (target === -1) return
+  room.players.splice(target, 1)
+  getIO().to(targetId).emit('kicked')
+  getIO().sockets.sockets.get(targetId)?.leave(room.code)
+  broadcastRoomState(room)
+}
+
+export function handleChatMessage(socketId: string, text: string) {
+  const room = findPlayerRoom(socketId)
+  if (!room || (room.status !== 'DISCUSSION' && room.status !== 'VOTING')) return
+
+  const player = room.players.find(p => p.id === socketId)
+  if (!player || player.eliminated) return
+
+  const msg = text.trim().slice(0, 200)
+  if (!msg) return
+
+  room.chatMessages.push({ playerId: socketId, nickname: player.nickname, text: msg, timestamp: Date.now() })
+  broadcastRoomState(room)
+}
+
+export function handleListRooms(): { code: string; playerCount: number; maxPlayers: number; status: string }[] {
+  const list: { code: string; playerCount: number; maxPlayers: number; status: string }[] = []
+  for (const room of rooms.values()) {
+    if (room.status === 'LOBBY' || room.status === 'ASSIGNING' || room.status === 'CLUE') {
+      list.push({
+        code: room.code,
+        playerCount: room.players.filter(p => !p.eliminated).length,
+        maxPlayers: room.settings.maxPlayers,
+        status: room.status,
+      })
+    }
+  }
+  return list
+}
+
+export function handleJoinAsSpectator(socket: Socket, code: string) {
+  const roomCode = code?.toUpperCase()
+  const room = rooms.get(roomCode)
+  if (!room) {
+    socket.emit('game_error', 'Room not found.')
+    return
+  }
+
+  room.spectators.push(socket.id)
+  socket.join(roomCode)
+  socket.emit('room_updated', getFilteredRoomState(room, socket.id))
+}
+
 export function handleLeaveRoom(socketId: string) {
   handleDisconnect(socketId)
 }
 
+const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+export function handleReconnect(socket: Socket, code: string, nickname: string) {
+  const roomCode = code?.toUpperCase()
+  const room = rooms.get(roomCode)
+  if (!room) {
+    socket.emit('game_error', 'Room not found.')
+    return
+  }
+
+  // Cancel pending disconnect
+  const timerKey = `${roomCode}_${nickname}`
+  const existingTimer = disconnectTimers.get(timerKey)
+  if (existingTimer) {
+    clearTimeout(existingTimer)
+    disconnectTimers.delete(timerKey)
+  }
+
+  // Find the disconnected player by nickname
+  const existing = room.players.find(p => p.nickname === nickname)
+  if (existing) {
+    existing.id = socket.id
+    socket.join(roomCode)
+    socket.emit('room_updated', getFilteredRoomState(room, socket.id))
+    broadcastRoomState(room)
+    return
+  }
+
+  // Not found — treat as fresh join
+  if (room.status === 'LOBBY') {
+    handleJoinRoom(socket, code, nickname)
+  } else {
+    socket.emit('game_error', 'Game in progress. Could not reconnect.')
+  }
+}
+
 export function handleDisconnect(socketId: string) {
   for (const [code, room] of rooms.entries()) {
+    const specIdx = room.spectators.indexOf(socketId)
+    if (specIdx >= 0) {
+      room.spectators.splice(specIdx, 1)
+    }
+
     const pIndex = room.players.findIndex(p => p.id === socketId)
-    if (pIndex === -1) continue
+    if (pIndex === -1) {
+      if (specIdx >= 0 && room.players.every(p => p.eliminated) && room.spectators.length === 0) {
+        clearTimer(room)
+        rooms.delete(code)
+      }
+      continue
+    }
 
     const player = room.players[pIndex]
-    room.players.splice(pIndex, 1)
+    const wasActive = !player.eliminated
 
-    if (room.players.length === 0) {
-      clearTimer(room)
-      rooms.delete(code)
-    } else {
-      if (player.isHost) {
-        room.players[0].isHost = true
-        room.players[0].isReady = true
-      }
+    // Give 20s grace period for reconnect
+    const timerKey = `${code}_${player.nickname}`
+    const timer = setTimeout(() => {
+      room.players.splice(pIndex, 1)
+      disconnectTimers.delete(timerKey)
 
-      if (room.status === 'CLUE') {
-        // Adjust clueOrder
-        const cluePos = room.clueOrder.indexOf(pIndex)
-        if (cluePos >= 0) {
-          room.clueOrder.splice(cluePos, 1)
-          // Re-map clueOrder to account for removed player
-          room.clueOrder = room.clueOrder.map(idx => idx > pIndex ? idx - 1 : idx)
+      if (room.players.every(p => p.eliminated) && room.spectators.length === 0) {
+        clearTimer(room)
+        rooms.delete(code)
+      } else {
+        if (player.isHost) {
+          const nextHost = room.players.find(p => !p.eliminated) || room.players[0]
+          nextHost.isHost = true
+          nextHost.isReady = true
         }
-        if (room.currentSpeakerIndex >= room.clueOrder.length) {
-          room.currentSpeakerIndex = Math.max(0, room.clueOrder.length - 1)
+        if (room.status === 'CLUE' && wasActive && room.clueOrder.length > 0) {
+          const active = getActivePlayers(room)
+          const cluePos = room.clueOrder.indexOf(pIndex)
+          if (cluePos >= 0) {
+            room.clueOrder.splice(cluePos, 1)
+            room.clueOrder = room.clueOrder.map(idx => idx > pIndex ? idx - 1 : idx)
+          }
+          if (room.currentSpeakerIndex >= room.clueOrder.length) {
+            room.currentSpeakerIndex = Math.max(0, room.clueOrder.length - 1)
+          }
+          broadcastRoomState(room)
+        } else {
+          broadcastRoomState(room)
         }
       }
+    }, 20000)
 
-      broadcastRoomState(room)
-    }
+    disconnectTimers.set(timerKey, timer)
     break
   }
 }
