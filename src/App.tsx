@@ -75,10 +75,6 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (roomState && roomState.settings.enableVoice !== false) initLocalAudio()
-  }, [roomState?.code, roomState?.settings.enableVoice])
-
-  useEffect(() => {
     return () => {
       localStreamRef.current?.getTracks().forEach(t => t.stop())
       Object.keys(peersRef.current).forEach(id => closePeerConnection(id))
@@ -116,7 +112,10 @@ export default function App() {
       if (!audioElementsRef.current[targetId]) {
         const audio = new Audio()
         audio.srcObject = remoteStream
+        audio.setAttribute('playsinline', '')
         audio.autoplay = true
+        audio.volume = 1
+        audio.play().catch(() => {})
         audioElementsRef.current[targetId] = audio
       }
     }
@@ -178,7 +177,10 @@ export default function App() {
     }
   }, [iceCandidate])
 
-  const toggleLocalMute = () => {
+  const toggleLocalMute = async () => {
+    if (!localStreamRef.current) {
+      await initLocalAudio()
+    }
     const next = !isMuted
     setIsMuted(next)
     localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !next })
@@ -636,7 +638,7 @@ export default function App() {
           <PhaseBanner phase={bannerPhase} show={showBanner} />
         )}
 
-        <main className="relative z-10 flex-1 overflow-y-auto px-6 py-6 flex flex-col justify-center max-w-3xl mx-auto w-full">
+        <main className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col max-w-3xl mx-auto w-full">
           {/* ─── LOBBY ─── */}
           {status === 'LOBBY' && (
             <div className="flex flex-col md:flex-row items-center md:items-start justify-center h-full gap-6 md:gap-10 w-full max-w-5xl mx-auto md:pt-8">
