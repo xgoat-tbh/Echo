@@ -1,0 +1,23 @@
+{
+  "name": "voice-platform-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node --experimental-vm-modules dist/index.js",
+    "start:dev": "node --experimental-vm-modules src/index.ts"
+  },
+  "dependencies": {
+    "mediasoup": "^3.15.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "~6.0.2"
+  }
+}
