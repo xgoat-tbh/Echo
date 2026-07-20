@@ -1,7 +1,8 @@
 import uWS from 'uWebSockets.js'
 import type * as mediasoup from 'mediasoup'
 import { Room } from './Room.js'
-import { SignalMessage, SignalMessageType } from './protocol.js'
+import { SignalMessageType } from './protocol.js'
+import type { SignalMessage } from './protocol.js'
 import { v4 as uuidv4 } from 'uuid'
 
 interface PeerConnection {
