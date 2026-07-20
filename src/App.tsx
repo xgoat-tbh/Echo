@@ -44,6 +44,8 @@ export default function App() {
 
   // Voice P2P
   const [isMuted, setIsMuted] = useState(false)
+  const [pttMode, setPttMode] = useState(false)
+  const [pttHeld, setPttHeld] = useState(false)
   const localStreamRef = useRef<MediaStream | null>(null)
   const peersRef = useRef<Record<string, RTCPeerConnection>>({})
   const audioElementsRef = useRef<Record<string, HTMLAudioElement>>({})
@@ -67,11 +69,74 @@ export default function App() {
   const initLocalAudio = async () => {
     try {
       if (localStreamRef.current) return
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true },
+        video: false,
+      })
       localStreamRef.current = stream
       stream.getAudioTracks().forEach(track => { track.enabled = !isMuted })
       connectToPeers()
     } catch { }
+  }
+
+  // ─── PTT ───
+  useEffect(() => {
+    if (!pttMode) return
+
+    const down = (e: KeyboardEvent) => {
+      if ((e.key === 'v' || e.key === 'V') && localStreamRef.current && !pttHeld) {
+        setPttHeld(true)
+        localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = true })
+        setIsMuted(false)
+        actions.toggleMute(false)
+      }
+    }
+    const up = (e: KeyboardEvent) => {
+      if ((e.key === 'v' || e.key === 'V') && localStreamRef.current) {
+        setPttHeld(false)
+        localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false })
+        setIsMuted(true)
+        actions.toggleMute(true)
+      }
+    }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    // Start muted
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false })
+      setIsMuted(true)
+      actions.toggleMute(true)
+    }
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+    }
+  }, [pttMode])
+
+  const startPtt = () => {
+    if (!localStreamRef.current) return
+    setPttHeld(true)
+    localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = true })
+    setIsMuted(false)
+    actions.toggleMute(false)
+  }
+
+  const endPtt = () => {
+    if (!localStreamRef.current) return
+    setPttHeld(false)
+    localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false })
+    setIsMuted(true)
+    actions.toggleMute(true)
+  }
+
+  const togglePttMode = () => {
+    const next = !pttMode
+    setPttMode(next)
+    if (next && localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false })
+      setIsMuted(true)
+      actions.toggleMute(true)
+    }
   }
 
   useEffect(() => {
@@ -1413,20 +1478,55 @@ export default function App() {
           )}
         </main>
 
-        {/* ─── Status Bar — Modern Game HUD ─── */}
+        {/* ─── Status Bar ─── */}
         <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-6 py-2 border-t border-border bg-bg-secondary/40 backdrop-blur-xl overflow-x-auto min-w-0 shrink-0">
-          {/* Mic */}
+          {/* Mic / PTT button */}
+          {pttMode ? (
+            <button
+              onMouseDown={startPtt}
+              onMouseUp={endPtt}
+              onMouseLeave={endPtt}
+              onTouchStart={(e) => { e.preventDefault(); startPtt() }}
+              onTouchEnd={(e) => { e.preventDefault(); endPtt() }}
+              onTouchCancel={endPtt}
+              className={cn(
+                'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-150 cursor-pointer shrink-0 select-none',
+                pttHeld
+                  ? 'bg-success/15 text-success shadow-sm shadow-success/20 scale-95'
+                  : 'bg-bg-tertiary/30 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50'
+              )}
+            >
+              {pttHeld ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{pttHeld ? 'Speaking' : 'PTT [V]'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={toggleLocalMute}
+              className={cn(
+                'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0',
+                isMuted
+                  ? 'bg-error/8 text-error/70 hover:bg-error/12'
+                  : 'bg-bg-tertiary/30 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50'
+              )}
+            >
+              {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Mic'}</span>
+            </button>
+          )}
+
+          {/* PTT mode toggle */}
           <button
-            onClick={toggleLocalMute}
+            onClick={togglePttMode}
             className={cn(
-              'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0',
-              isMuted
-                ? 'bg-error/8 text-error/70 hover:bg-error/12'
-                : 'bg-bg-tertiary/30 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50'
+              'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer shrink-0',
+              pttMode
+                ? 'bg-accent/10 text-accent/90 hover:bg-accent/15'
+                : 'bg-bg-tertiary/20 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary/40'
             )}
+            title={pttMode ? 'Switch to Free Hand' : 'Switch to Push to Talk'}
           >
-            {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Mic'}</span>
+            <span className="font-bold text-[10px] tracking-wider">{pttMode ? 'PTT' : 'FH'}</span>
+            <span className="hidden sm:inline">{pttMode ? 'PTT' : 'Free'}</span>
           </button>
 
           {/* Connection indicator */}
@@ -1435,7 +1535,7 @@ export default function App() {
             isConnected ? 'bg-bg-tertiary/30 text-text-secondary' : 'bg-error/8 text-error/70'
           )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />
-            <span className="hidden sm:inline">{isConnected ? 'Connected' : 'Disconnected'}</span>
+            <span className="hidden sm:inline">{isConnected ? 'Online' : 'Offline'}</span>
           </div>
 
           {/* Ping indicator */}
@@ -1448,15 +1548,13 @@ export default function App() {
           <button
             onClick={toggleTheme}
             className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold text-text-tertiary hover:text-text-primary bg-bg-tertiary/20 hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer shrink-0"
-            title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
           >
             {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isLight ? 'Dark' : 'Light'}</span>
           </button>
 
           <div className="flex-1 min-w-[4px]" />
 
-          {/* Room code (compact) */}
+          {/* Room code */}
           {roomState && (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-mono font-semibold tracking-wider shrink-0">
               {code}
@@ -1469,9 +1567,46 @@ export default function App() {
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-[10px] text-[11px] font-semibold text-error/60 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/30 hover:border-error/20 transition-all duration-200 cursor-pointer shrink-0"
           >
             <LogOut className="w-3 h-3" />
-            <span className="hidden sm:inline">Leave</span>
           </button>
         </div>
+
+        {/* ─── Mobile PTT hold-to-talk button ─── */}
+        {pttMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="sm:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 select-none"
+          >
+            <button
+              onTouchStart={(e) => { e.preventDefault(); startPtt() }}
+              onTouchEnd={(e) => { e.preventDefault(); endPtt() }}
+              onTouchCancel={endPtt}
+              onMouseDown={startPtt}
+              onMouseUp={endPtt}
+              onMouseLeave={endPtt}
+              className={cn(
+                'w-20 h-20 rounded-full flex items-center justify-center transition-all duration-100 shadow-xl cursor-pointer select-none',
+                pttHeld
+                  ? 'bg-success scale-90 shadow-success/40'
+                  : 'bg-accent scale-100 shadow-accent/20 hover:bg-accent/90'
+              )}
+            >
+              <motion.div
+                animate={pttHeld ? { scale: [1, 1.15, 1], opacity: [1, 0.8, 1] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                {pttHeld ? (
+                  <Mic className="w-8 h-8 text-white" />
+                ) : (
+                  <MicOff className="w-8 h-8 text-white" />
+                )}
+              </motion.div>
+            </button>
+            <p className="text-center text-[10px] font-semibold text-text-tertiary mt-2 uppercase tracking-wider">
+              {pttHeld ? 'Speaking' : 'Hold to Talk'}
+            </p>
+          </motion.div>
+        )}
 
         {/* ─── Mobile Chat Sheet ─── */}
         {(status === 'DISCUSSION' || status === 'VOTING') && (
