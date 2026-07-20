@@ -41,7 +41,7 @@ if (fs.existsSync(distPath)) {
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() })
+  res.json({ status: 'ok', uptime: process.uptime(), url: _req.headers.host })
 })
 
 const httpServer = createServer(app)
@@ -65,6 +65,7 @@ function startKeepAlive() {
 }
 
 io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id} from ${socket.handshake.address}`)
   socket.on('create_room', (nickname) => {
     handleCreateRoom(socket, nickname)
   })

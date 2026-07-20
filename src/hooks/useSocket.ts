@@ -58,6 +58,7 @@ export function useSocket() {
       timeout: 30000,
       withCredentials: false,
     })
+    ;(window as any).__socketUrl = serverUrl
     socketRef.current = socket
 
     socket.on('connect', () => {
@@ -79,9 +80,8 @@ export function useSocket() {
 
     socket.on('connect_error', (err) => {
       const msg = err.message || 'unknown error'
-      const desc = (err as any).description
-      setConnectError(`Connection failed: ${msg}${desc ? ` (${desc})` : ''}`)
-      // Socket.io will retry with polling fallback automatically
+      const url = (window as any).__socketUrl || 'unknown'
+      setConnectError(`Connection failed (target: ${url}): ${msg}`)
     })
 
     socket.on('room_updated', (state: RoomState) => {

@@ -1,1 +1,1 @@
-Fix CORS credentials issue - disable withCredentials for polling transport
+Show target URL in connection error, add server connection logging
