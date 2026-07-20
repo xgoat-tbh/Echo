@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { AnimatePresence } from 'framer-motion'
 import { LobbyPage } from './app/lobby/page'
 import { RoomPage } from './app/room/page'
 
