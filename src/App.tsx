@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, Sparkles, MessageSquare } from 'lucide-react'
+import { Copy, Check, Crown, Mic, MicOff, Play, ArrowLeft, Send, Settings, X, LogOut, Users, MessageSquare } from 'lucide-react'
 import { useSocket, type Player } from './hooks/useSocket'
 import { PageTransition } from './motion/PageTransition'
 import { GameHeader } from './game/components/GameHeader'
@@ -10,6 +10,8 @@ import { ResultsScreen } from './game/components/ResultsScreen'
 import { Timer } from './game/components/Timer'
 import { PhaseBanner } from './game/components/PhaseBanner'
 import { Confetti } from './game/components/Confetti'
+import { CustomSelect } from './game/components/CustomSelect'
+import { CustomCheckbox } from './game/components/CustomCheckbox'
 import { cn } from './lib/cn'
 import { config } from './config'
 import { getPlayerColor } from './game/playerColors'
@@ -622,189 +624,271 @@ export default function App() {
           {/* ─── LOBBY ─── */}
           {status === 'LOBBY' && (
             <div className="flex flex-col md:flex-row items-center md:items-start justify-center h-full gap-6 md:gap-10 w-full max-w-5xl mx-auto md:pt-8">
-              {/* Left: Room info + Players */}
-              <div className="flex flex-col items-center md:items-start gap-5 w-full md:w-auto md:flex-1 md:max-w-lg">
-                {/* Room header */}
+
+              {/* ─── LEFT: Room Header + Players ─── */}
+              <div className="flex flex-col items-center md:items-start gap-5 w-full md:flex-1 md:max-w-lg">
+
+                {/* Room header — modern HUD */}
                 <div className="flex flex-col items-center md:items-start gap-3 w-full">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-tertiary">
-                    Room Code
-                  </span>
-                  <div className="flex items-center gap-3 surface-card px-5 py-3 rounded-2xl">
-                    <span className="font-bold text-[28px] tracking-[0.2em] text-text-primary font-mono leading-none select-all">{code}</span>
-                    <button onClick={handleCopyCode} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy code">
-                      {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-text-tertiary" />}
-                    </button>
+                  <div className="flex items-center gap-2.5 surface-card px-5 py-3 rounded-2xl w-full md:w-auto">
+                    <div className="flex items-center gap-3 flex-1 md:flex-none">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-text-tertiary shrink-0">Room</span>
+                      <span className="font-bold text-[28px] tracking-[0.2em] text-text-primary font-mono leading-none select-all">{code}</span>
+                    </div>
+                    <div className="flex items-center gap-1 ml-auto md:ml-2">
+                      <button onClick={handleCopyCode} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy code">
+                        {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5 text-text-tertiary" />}
+                      </button>
+                      {isHost && (
+                        <button onClick={() => { const url = `${window.location.origin}?spectate=${code}`; navigator.clipboard.writeText(url); setSpectatorCopied(true); setTimeout(() => setSpectatorCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy spectator link">
+                          {spectatorCopied ? <Check className="w-3.5 h-3.5 text-success" /> : <LogOut className="w-3.5 h-3.5 text-text-tertiary" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full md:w-auto gap-4 px-1">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('w-2 h-2 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />
+                        <span className="text-[11px] text-text-secondary font-medium tracking-wide">{players.length} player{players.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      <span className="h-3 w-px bg-border/40" />
+                      <span className="text-[11px] text-text-tertiary font-medium tracking-wide">{settings.numEchoes} Echo{settings.numEchoes > 1 ? 'es' : ''}</span>
+                      <span className="h-3 w-px bg-border/40" />
+                      <span className="text-[11px] text-text-tertiary font-medium capitalize">{settings.wordPack === 'mixed' ? 'Any Pack' : settings.wordPack}</span>
+                    </div>
                     {isHost && (
-                      <button onClick={() => { const url = `${window.location.origin}?spectate=${code}`; navigator.clipboard.writeText(url); setSpectatorCopied(true); setTimeout(() => setSpectatorCopied(false), 2000) }} className="p-1.5 hover:text-accent rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer" title="Copy spectator link">
-                        {spectatorCopied ? <Check className="w-4 h-4 text-success" /> : <LogOut className="w-4 h-4 text-text-tertiary" />}
+                      <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1.5 text-[11px] text-text-tertiary hover:text-text-primary transition-colors duration-200 cursor-pointer">
+                        <Settings className="w-3.5 h-3.5" /> Settings
                       </button>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                    <span className="text-[11px] text-text-secondary font-medium tracking-wide">
-                      {players.length} {players.length === 1 ? 'player' : 'players'} connected
-                    </span>
                   </div>
                 </div>
 
                 <div className="divider w-full" />
 
-                {/* Player list */}
+                {/* Player list — premium cards */}
                 <div className="w-full space-y-1.5 md:max-h-[55vh] md:overflow-y-auto md:pr-1">
                   {players.map((p, idx) => {
                     const color = getPlayerColor(p.id, idx)
                     const isSelf = p.id === self?.id
                     return (
-                    <div key={p.id} className={cn(
-                      'flex items-center justify-between px-4 py-3.5 rounded-[14px] transition-all duration-200',
-                      isSelf ? 'surface-card' : ''
-                    )}
-                      style={isSelf ? { boxShadow: `0 0 0 1px ${color}30, 0 4px 16px ${color}10` } : {}}
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      whileHover={{ y: -1, transition: { duration: 0.15 } }}
+                      className={cn(
+                        'flex items-center justify-between px-4 py-3 rounded-[14px] transition-all duration-200',
+                        isSelf ? 'surface-card' : 'hover:bg-bg-secondary/40'
+                      )}
+                      style={isSelf ? { boxShadow: `0 0 0 1px ${color}25, 0 4px 16px ${color}08` } : {}}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        {p.isHost ? <Crown className="w-3.5 h-3.5 text-amber-500/80 shrink-0 -ml-0.5" /> : null}
-                        <span className="font-medium text-[14px] text-text-primary tracking-[-0.006em] truncate">
-                          {p.nickname}
-                          {isSelf && <span className="text-[12px] text-text-tertiary ml-1.5 font-normal">(You)</span>}
-                        </span>
+                        {/* Avatar circle */}
+                        <div className="relative shrink-0">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold" style={{ backgroundColor: `${color}20`, color }}>
+                            {p.nickname.charAt(0).toUpperCase()}
+                          </div>
+                          {p.isHost && (
+                            <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-amber-500 flex items-center justify-center">
+                              <Crown className="w-2 h-2 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-[14px] text-text-primary tracking-[-0.006em] truncate">
+                              {p.nickname}
+                            </span>
+                            {isSelf && (
+                              <span className="text-[10px] font-medium text-text-tertiary bg-bg-tertiary/30 px-1.5 py-0.5 rounded-md">You</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={cn(
+                              'text-[10px] font-medium',
+                              p.isReady ? 'text-success' : 'text-text-tertiary'
+                            )}>
+                              {p.isReady ? 'Ready' : 'Not Ready'}
+                            </span>
+                            <span className="text-[9px] text-text-tertiary/50">·</span>
+                            <span className="text-[10px] text-text-tertiary">{p.isMuted ? 'Muted' : 'Mic On'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={cn(
-                          'text-[11px] px-3 py-1 rounded-full font-medium tracking-wide',
-                          p.isReady
-                            ? 'bg-success/8 text-success'
-                            : 'text-text-tertiary'
-                        )}>
-                          {p.isReady ? 'Ready' : 'Waiting'}
-                        </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {isHost && p.id !== self?.id && (
-                          <button onClick={() => actions.kickPlayer(p.id)} className="p-1.5 rounded-lg hover:bg-error/10 text-text-tertiary hover:text-error transition-all duration-200 cursor-pointer" title={`Kick ${p.nickname}`}>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => actions.kickPlayer(p.id)}
+                            className="p-1.5 rounded-lg hover:bg-error/10 text-text-tertiary hover:text-error transition-all duration-200 cursor-pointer"
+                            title={`Kick ${p.nickname}`}
+                          >
                             <X className="w-3.5 h-3.5" />
-                          </button>
+                          </motion.button>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   )})}
                   {roomState.spectators?.length > 0 && (
-                    <div className="px-4 py-2 text-[11px] text-text-tertiary font-medium">
-                      {roomState.spectators.length} spectator{roomState.spectators.length > 1 ? 's' : ''} watching
+                    <div className="px-4 py-2.5 text-[11px] text-text-tertiary font-medium flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5" />
+                      {roomState.spectators.length} spectator{roomState.spectators.length > 1 ? 's' : ''}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Right: Actions panel */}
-              <div className="flex flex-col items-center md:items-stretch gap-3 w-full md:w-72 md:sticky md:top-8">
-                <div className="w-full surface-card rounded-2xl p-5 space-y-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary text-center md:text-left">Ready Up</p>
+              {/* ─── RIGHT: Start + Settings panel ─── */}
+              <div className="flex flex-col gap-3 w-full md:w-80 md:sticky md:top-8">
 
+                {/* Start / Ready panel */}
+                <div className="w-full surface-card rounded-2xl p-5 space-y-4">
                   {!settings.autoReady && (
-                    <motion.button
-                      onClick={() => { actions.toggleReady(); haptic(10) }}
-                      whileTap={self?.isReady ? {} : { scale: 0.97 }}
-                      className={cn(
-                        'w-full h-[48px] rounded-[14px] font-semibold text-[14px] transition-all duration-200 cursor-pointer relative overflow-hidden',
-                        self?.isReady
-                          ? 'btn-secondary'
-                          : 'btn-primary'
-                      )}
-                    >
-                      {self?.isReady ? 'Cancel Ready' : 'Ready Up'}
-                    </motion.button>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-tertiary">Your Status</p>
+                      <motion.button
+                        onClick={() => { actions.toggleReady(); haptic(10) }}
+                        whileTap={self?.isReady ? { scale: 0.98 } : { scale: 0.97 }}
+                        className={cn(
+                          'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer relative overflow-hidden',
+                          self?.isReady
+                            ? 'bg-bg-secondary border border-border/60 text-text-secondary hover:border-border-hover/40'
+                            : 'bg-accent text-white hover:brightness-110 shadow-lg shadow-accent/20'
+                        )}
+                      >
+                        <motion.span
+                          key={self?.isReady ? 'ready' : 'notready'}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {self?.isReady ? 'Cancel Ready' : 'Ready Up'}
+                        </motion.span>
+                      </motion.button>
+                    </div>
                   )}
 
                   {isHost && (
-                    <div className="space-y-3 pt-1">
-                      <button
+                    <div className="space-y-3">
+                      <div className="divider" />
+                      <motion.button
                         onClick={actions.startGame}
                         disabled={players.length < 4}
-                        className="w-full btn-primary flex items-center justify-center gap-2"
+                        whileTap={players.length >= 4 ? { scale: 0.97 } : {}}
+                        className={cn(
+                          'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 relative overflow-hidden',
+                          players.length >= 4
+                            ? 'bg-accent text-white hover:brightness-110 shadow-lg shadow-accent/20'
+                            : 'bg-bg-tertiary/30 text-text-tertiary cursor-not-allowed'
+                        )}
                       >
                         <Play className="w-4 h-4 fill-current" /> Start Game
-                      </button>
+                      </motion.button>
                       {players.length < 4 && (
-                        <p className="text-[11px] text-center text-text-tertiary leading-snug tracking-[-0.003em] opacity-70">
-                          Need at least 4 players
-                        </p>
+                        <p className="text-[11px] text-center text-text-tertiary leading-snug tracking-[-0.003em]">{players.length}/4 players needed</p>
                       )}
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={settings.autoReady}
-                            onChange={(e) => actions.updateSettings({ autoReady: e.target.checked })}
-                            className="w-4 h-4 rounded border-border bg-bg-tertiary/40 accent-accent cursor-pointer"
-                          />
-                          <span className="text-[11px] text-text-secondary font-medium whitespace-nowrap">Auto-ready</span>
-                        </label>
-                        <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1.5 text-[11px] text-text-tertiary hover:text-text-primary transition-colors duration-200 cursor-pointer">
-                          <Settings className="w-3.5 h-3.5" /> Settings
-                        </button>
+                      <div className="flex items-center justify-between pt-1">
+                        <CustomCheckbox
+                          checked={settings.autoReady}
+                          onChange={(v) => actions.updateSettings({ autoReady: v })}
+                          label="Auto-ready"
+                        />
                       </div>
                     </div>
                   )}
                 </div>
 
+                {/* Settings panel — horizontal grid */}
                 {showSettings && isHost && (
                   <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full surface-card rounded-2xl p-4 space-y-3"
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full surface-card rounded-2xl p-5 space-y-5"
                   >
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary">Timers (s)</p>
-                    {(['clueTimeSeconds', 'discussTimeSeconds', 'voteTimeSeconds'] as const).map(key => (
-                      <div key={key} className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-text-secondary font-medium">{key.replace('TimeSeconds', '').replace(/([A-Z])/g, ' $1').trim()}</span>
-                        <input type="number" min={10} max={300} step={5} value={settings[key]}
-                          onChange={(e) => actions.updateSettings({ [key]: Math.max(10, Math.min(300, parseInt(e.target.value) || 10)) })}
-                          className="w-14 text-center input-premium !py-0.5 !text-[11px]"
+                    {/* Timers row */}
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-text-tertiary mb-3">Timers</p>
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {(['clueTimeSeconds', 'discussTimeSeconds', 'voteTimeSeconds'] as const).map(key => (
+                          <div key={key}>
+                            <p className="text-[9px] font-medium text-text-tertiary mb-1.5 capitalize truncate">{key.replace('TimeSeconds', '').replace(/([A-Z])/g, ' $1').trim()}</p>
+                            <input type="number" min={10} max={300} step={5} value={settings[key]}
+                              onChange={(e) => actions.updateSettings({ [key]: Math.max(10, Math.min(300, parseInt(e.target.value) || 10)) })}
+                              className="w-full text-center input-premium !py-2 !text-[13px] font-semibold rounded-[10px]"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="divider" />
+
+                    {/* Game settings row */}
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-text-tertiary mb-3">Game</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        <CustomSelect
+                          options={[
+                            { value: '1', label: '1 Echo' },
+                            { value: '2', label: '2 Echoes' },
+                            { value: '3', label: '3 Echoes' },
+                          ]}
+                          value={String(settings.numEchoes)}
+                          onChange={(v) => actions.updateSettings({ numEchoes: parseInt(v) })}
+                          label="Echoes"
+                        />
+                        <CustomSelect
+                          options={[
+                            { value: 'easy', label: 'Easy' },
+                            { value: 'normal', label: 'Normal' },
+                            { value: 'hard', label: 'Hard' },
+                          ]}
+                          value={settings.wordDifficulty}
+                          onChange={(v) => actions.updateSettings({ wordDifficulty: v as any })}
+                          label="Difficulty"
+                        />
+                        <CustomSelect
+                          options={[
+                            { value: 'mixed', label: 'Mixed' },
+                            { value: 'animals', label: 'Animals' },
+                            { value: 'food', label: 'Food' },
+                            { value: 'nature', label: 'Nature' },
+                            { value: 'objects', label: 'Objects' },
+                            { value: 'fantasy', label: 'Fantasy' },
+                          ]}
+                          value={settings.wordPack}
+                          onChange={(v) => actions.updateSettings({ wordPack: v })}
+                          label="Word Pack"
                         />
                       </div>
-                    ))}
+                    </div>
+
                     <div className="divider" />
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-text-tertiary">Game</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-text-secondary font-medium">Echoes</span>
-                      <input type="number" min={1} max={3} value={settings.numEchoes}
-                        onChange={(e) => actions.updateSettings({ numEchoes: Math.max(1, Math.min(3, parseInt(e.target.value) || 1)) })}
-                        className="w-14 text-center input-premium !py-0.5 !text-[11px]"
-                      />
+
+                    {/* Toggles row */}
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-text-tertiary mb-3">Features</p>
+                      <div className="flex items-center gap-6">
+                        <CustomCheckbox
+                          checked={settings.enableVoice}
+                          onChange={(v) => actions.updateSettings({ enableVoice: v })}
+                          label="Voice Chat"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-text-secondary font-medium">Difficulty</span>
-                      <select value={settings.wordDifficulty}
-                        onChange={(e) => actions.updateSettings({ wordDifficulty: e.target.value as any })}
-                        className="input-premium !py-0.5 !text-[11px] w-auto"
-                      >
-                        <option value="easy">Easy</option>
-                        <option value="normal">Normal</option>
-                        <option value="hard">Hard</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-text-secondary font-medium">Word Pack</span>
-                      <select value={settings.wordPack}
-                        onChange={(e) => actions.updateSettings({ wordPack: e.target.value })}
-                        className="input-premium !py-0.5 !text-[11px] w-auto"
-                      >
-                        <option value="mixed">Mixed</option>
-                        <option value="animals">Animals</option>
-                        <option value="food">Food</option>
-                        <option value="nature">Nature</option>
-                        <option value="objects">Objects</option>
-                        <option value="fantasy">Fantasy</option>
-                      </select>
-                    </div>
-                    <label className="flex items-center justify-between gap-2 cursor-pointer select-none">
-                      <span className="text-[11px] text-text-secondary font-medium">Voice Chat</span>
-                      <input type="checkbox" checked={settings.enableVoice}
-                        onChange={(e) => actions.updateSettings({ enableVoice: e.target.checked })}
-                        className="w-4 h-4 rounded border-border bg-bg-tertiary/40 accent-accent cursor-pointer"
-                      />
-                    </label>
                   </motion.div>
+                )}
+
+                {/* Spectator info */}
+                {!isHost && (
+                  <div className="w-full surface-card rounded-2xl p-4 text-center">
+                    <p className="text-[11px] text-text-tertiary">Waiting for host to start...</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -1124,34 +1208,54 @@ export default function App() {
           )}
         </main>
 
-        {/* ─── Voice Bar ─── */}
-        <div className="flex items-center gap-4 px-6 py-3.5 border-t border-border bg-bg-secondary/50 backdrop-blur-xl">
+        {/* ─── Status Bar — Modern Game HUD ─── */}
+        <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-t border-border bg-bg-secondary/40 backdrop-blur-xl">
+          {/* Mic */}
           <button
             onClick={toggleLocalMute}
             className={cn(
-              'flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-[12px] font-semibold transition-all duration-200 cursor-pointer',
+              'flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200 cursor-pointer',
               isMuted
-                ? 'bg-error/8 text-error/80 hover:bg-error/12'
-                : 'bg-bg-tertiary/40 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60'
+                ? 'bg-error/8 text-error/70 hover:bg-error/12'
+                : 'bg-bg-tertiary/30 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50'
             )}
           >
             {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Mic On'}</span>
+            <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Mic'}</span>
           </button>
+
+          {/* Connection indicator */}
+          <div className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold transition-all duration-200',
+            isConnected ? 'bg-bg-tertiary/30 text-text-secondary' : 'bg-error/8 text-error/70'
+          )}>
+            <span className={cn('w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />
+            <span className="hidden sm:inline">{isConnected ? 'Connected' : 'Disconnected'}</span>
+          </div>
+
+          {/* Ping indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-semibold">
+            <span className="w-1 h-1 rounded-full bg-text-tertiary/40" />
+            <span>Stable</span>
+          </div>
 
           <div className="flex-1" />
 
+          {/* Room code (compact) */}
+          {roomState && (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-bg-tertiary/30 text-text-tertiary text-[11px] font-mono font-semibold tracking-wider">
+              {code}
+            </div>
+          )}
+
+          {/* Leave */}
           <button
             onClick={actions.leaveRoom}
-            className="px-3.5 py-2 rounded-[12px] text-[12px] font-semibold text-error/70 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/40 hover:border-error/20 transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-[11px] font-semibold text-error/60 hover:text-error bg-bg-tertiary/20 hover:bg-error/8 border border-border/30 hover:border-error/20 transition-all duration-200 cursor-pointer"
           >
-            Leave
+            <LogOut className="w-3 h-3" />
+            <span className="hidden sm:inline">Leave</span>
           </button>
-
-          <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-medium tracking-wide">
-            <span className={cn('w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-error')} />
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </div>
         </div>
 
         {/* ─── Mobile Chat Sheet ─── */}
