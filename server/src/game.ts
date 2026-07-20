@@ -1,4 +1,4 @@
-import { type Server as SocketIOServer } from 'socket.io'
+import { type Server as SocketIOServer, type Socket } from 'socket.io'
 import { getRandomWordPair, type WordPair } from './words.js'
 
 export type GamePhase = 'LOBBY' | 'ASSIGNING' | 'CLUE' | 'DISCUSSION' | 'VOTING' | 'REVEAL' | 'RESULTS'
@@ -139,10 +139,10 @@ function findPlayerRoom(socketId: string): GameRoom | null {
 
 // --- Event Handlers ---
 
-export function handleCreateRoom(socketId: string, nickname: string) {
+export function handleCreateRoom(socket: Socket, nickname: string) {
   const code = generateRoomCode()
   const player: Player = {
-    id: socketId,
+    id: socket.id,
     nickname: nickname || `Player${Math.floor(Math.random() * 1000)}`,
     isHost: true,
     isReady: true,
@@ -177,32 +177,31 @@ export function handleCreateRoom(socketId: string, nickname: string) {
   }
 
   rooms.set(code, room)
-  const i = getIO()
-  i.in(socketId).socketsJoin(code)
-  i.to(socketId).emit('room_updated', getFilteredRoomState(room, socketId))
+  socket.join(code)
+  socket.emit('room_updated', getFilteredRoomState(room, socket.id))
 }
 
-export function handleJoinRoom(socketId: string, code: string, nickname: string) {
+export function handleJoinRoom(socket: Socket, code: string, nickname: string) {
   const roomCode = code?.toUpperCase()
   const room = rooms.get(roomCode)
 
   if (!room) {
-    getIO().to(socketId).emit('game_error', 'Room not found.')
+    socket.emit('game_error', 'Room not found.')
     return
   }
 
   if (room.status !== 'LOBBY') {
-    getIO().to(socketId).emit('game_error', 'Game already started in this room.')
+    socket.emit('game_error', 'Game already started in this room.')
     return
   }
 
   if (room.players.length >= room.settings.maxPlayers) {
-    getIO().to(socketId).emit('game_error', 'Room is full.')
+    socket.emit('game_error', 'Room is full.')
     return
   }
 
   const player: Player = {
-    id: socketId,
+    id: socket.id,
     nickname: nickname || `Player${Math.floor(Math.random() * 1000)}`,
     isHost: false,
     isReady: false,
@@ -216,8 +215,7 @@ export function handleJoinRoom(socketId: string, code: string, nickname: string)
   }
 
   room.players.push(player)
-  const i = getIO()
-  i.in(socketId).socketsJoin(roomCode)
+  socket.join(roomCode)
   broadcastRoomState(room)
 }
 

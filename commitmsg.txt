@@ -1,0 +1,1 @@
+Fix socket room join - pass socket object to create/join handlers, use Vite proxy in dev mode

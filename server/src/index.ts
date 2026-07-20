@@ -58,11 +58,11 @@ function startKeepAlive() {
 
 io.on('connection', (socket) => {
   socket.on('create_room', (nickname) => {
-    handleCreateRoom(socket.id, nickname)
+    handleCreateRoom(socket, nickname)
   })
 
   socket.on('join_room', ({ code, nickname }) => {
-    handleJoinRoom(socket.id, code, nickname)
+    handleJoinRoom(socket, code, nickname)
   })
 
   socket.on('toggle_ready', () => {

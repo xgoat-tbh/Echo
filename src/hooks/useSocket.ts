@@ -51,10 +51,7 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
-    const isDev = import.meta.env.DEV
-    const serverUrl = isDev
-      ? 'http://localhost:4000'
-      : (import.meta.env.VITE_BACKEND_URL || window.location.origin)
+    const serverUrl = import.meta.env.VITE_BACKEND_URL || window.location.origin
 
     const socket = io(serverUrl)
     socketRef.current = socket
