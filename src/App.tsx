@@ -381,19 +381,7 @@ export default function App() {
   if (!roomState) {
     return (
       <PageTransition>
-        <div className="flex h-full flex-col overflow-y-auto bg-bg bg-ambient relative">
-          {/* Background particles */}
-          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-            {particles.map((p, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 rounded-full"
-                style={{ left: p.left, top: p.top, backgroundColor: p.color }}
-                animate={{ y: [0, -30, 0], opacity: [0.15, 0.4, 0.15], scale: [1, 1.3, 1] }}
-                transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: [0.16, 1, 0.3, 1] }}
-              />
-            ))}
-          </div>
+      <div className="flex h-full flex-col overflow-y-auto bg-bg bg-ambient relative">
           <main className="relative z-10 flex flex-col items-center px-6 max-w-[640px] mx-auto w-full">
 
             {/* ─── Hero Block ─── */}
@@ -408,9 +396,9 @@ export default function App() {
                 initial={{ opacity: 0, y: 12, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.9, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-                className="text-[5.5rem] sm:text-[6.5rem] font-extrabold tracking-[-0.06em] text-text-primary select-none uppercase leading-none"
+                className="text-[6.5rem] sm:text-[7.5rem] font-medium font-display italic tracking-normal text-text-primary select-none lowercase leading-none"
               >
-                Echo
+                echo
               </motion.h1>
 
               {/* Subtitle */}
@@ -446,7 +434,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-1 w-full max-w-[400px] surface-elevated rounded-2xl p-5"
+                className="mt-1 w-full max-w-[400px] surface-elevated rounded-3xl p-6"
               >
                 <AnimatePresence mode="wait">
                   {!isJoining ? (
@@ -460,7 +448,7 @@ export default function App() {
                       className="w-full space-y-4"
                     >
                       <div className="space-y-1.5">
-                        <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-text-tertiary pl-1">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-text-tertiary pl-1">
                           Nickname
                         </label>
                         <input
@@ -502,7 +490,7 @@ export default function App() {
                       className="w-full space-y-4"
                     >
                       <div className="space-y-1.5">
-                        <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-text-tertiary pl-1">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-text-tertiary pl-1">
                           Nickname
                         </label>
                         <input
@@ -516,7 +504,7 @@ export default function App() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-text-tertiary pl-1">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-text-tertiary pl-1">
                           Room Code
                         </label>
                         <input
@@ -850,10 +838,8 @@ export default function App() {
                         onClick={() => { actions.toggleReady(); haptic(10) }}
                         whileTap={self?.isReady ? { scale: 0.98 } : { scale: 0.97 }}
                         className={cn(
-                          'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer relative overflow-hidden',
-                          self?.isReady
-                            ? 'bg-bg-secondary border border-border/60 text-text-secondary hover:border-border-hover/40'
-                            : 'bg-accent text-text-inverse hover:brightness-110 shadow-lg shadow-accent/20'
+                          'w-full h-[52px] rounded-[14px] font-semibold text-[14px] transition-all duration-200 cursor-pointer relative overflow-hidden flex items-center justify-center',
+                          self?.isReady ? 'btn-secondary' : 'btn-primary'
                         )}
                       >
                         <motion.span
@@ -876,10 +862,10 @@ export default function App() {
                         disabled={players.length < 4}
                         whileTap={players.length >= 4 ? { scale: 0.97 } : {}}
                         className={cn(
-                          'w-full h-[52px] rounded-[14px] font-bold text-[15px] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 relative overflow-hidden',
+                          'w-full h-[52px] rounded-[14px] font-semibold text-[14px] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 relative overflow-hidden',
                           players.length >= 4
-                            ? 'bg-accent text-text-inverse hover:brightness-110 shadow-lg shadow-accent/20'
-                            : 'bg-bg-tertiary/30 text-text-tertiary cursor-not-allowed'
+                            ? 'btn-primary'
+                            : 'bg-bg-tertiary/30 text-text-tertiary cursor-not-allowed border border-transparent'
                         )}
                       >
                         <Play className="w-4 h-4 fill-current" /> Start Game
@@ -1010,16 +996,16 @@ export default function App() {
                 className={cn(
                   'rounded-[20px] p-5 px-10 text-center relative overflow-hidden',
                   self?.isEcho
-                    ? 'bg-error/10 border border-error/20'
-                    : 'bg-success/10 border border-success/20'
+                    ? 'bg-tension/8 border border-tension/20'
+                    : 'bg-success/8 border border-success/20'
                 )}
               >
                 {self?.isEcho && (
                   <motion.div
                     animate={{ opacity: [0.1, 0.3, 0.1] }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute inset-0"
-                    style={{ boxShadow: 'inset 0 0 60px hsla(358,68%,48%,0.1)' }}
+                    className="absolute inset-0 animate-pulse"
+                    style={{ boxShadow: 'inset 0 0 60px hsla(12,76%,54%,0.1)' }}
                   />
                 )}
                 <motion.span
@@ -1027,8 +1013,8 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15, duration: 0.4 }}
                   className={cn(
-                    'text-[13px] font-extrabold uppercase tracking-[0.15em]',
-                    self?.isEcho ? 'text-error' : 'text-success'
+                    'text-[13px] font-semibold uppercase tracking-[0.15em]',
+                    self?.isEcho ? 'text-tension' : 'text-success'
                   )}
                 >
                   {self?.isEcho ? 'You are the Echo' : 'You are a Commoner'}
@@ -1037,7 +1023,7 @@ export default function App() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.35, duration: 0.4 }}
-                  className="text-[11px] text-text-tertiary mt-2 font-medium"
+                  className="text-[11px] text-text-secondary mt-2 font-medium"
                 >
                   {self?.isEcho
                     ? 'Your word is different — blend in!'
@@ -1052,15 +1038,16 @@ export default function App() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full"
+                  className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full animate-float"
                 >
-                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3.5">
                     The Common Word
                   </p>
-                  <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                  <div className="divider mb-4.5" />
+                  <p className="text-[36px] font-medium font-display italic text-text-primary tracking-normal select-none lowercase leading-none my-3.5">
                     {publicWord}
                   </p>
-                  <div className="divider mt-4 mb-3" />
+                  <div className="divider mt-4.5 mb-3.5" />
                   <p className="text-[11px] text-text-tertiary leading-[1.6]">
                     All commoners describe this word.<br />
                     The Echo describes a different word.
@@ -1078,10 +1065,11 @@ export default function App() {
             <div className="flex flex-col items-center max-w-lg mx-auto gap-6 pt-4 w-full">
               {!self?.isEcho && (
                 <div className="surface-elevated rounded-[20px] p-6 text-center max-w-[340px] w-full">
-                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] font-semibold text-text-tertiary mb-3.5">
                     The Word Is
                   </p>
-                  <p className="text-[28px] font-extrabold text-text-primary tracking-[0.08em] select-none uppercase">
+                  <div className="divider mb-4.5" />
+                  <p className="text-[36px] font-medium font-display italic text-text-primary tracking-normal select-none lowercase leading-none my-3.5">
                     {publicWord}
                   </p>
                 </div>
@@ -1372,17 +1360,17 @@ export default function App() {
                       initial={{ opacity: 0, y: 20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                      className="surface-elevated rounded-[20px] p-6 text-center relative overflow-hidden"
+                      className="surface-elevated rounded-[24px] p-6 text-center relative overflow-hidden"
                     >
                       {/* Pulsing glow */}
                       <motion.div
                         animate={{ opacity: [0.08, 0.2, 0.08] }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute inset-0"
+                        className="absolute inset-0 animate-pulse"
                         style={{
                           background: isEcho
-                            ? `radial-gradient(circle at center, hsla(358,68%,48%,0.15), transparent 70%)`
-                            : `radial-gradient(circle at center, hsla(142,52%,42%,0.15), transparent 70%)`
+                            ? `radial-gradient(circle at center, hsla(12,76%,54%,0.15), transparent 70%)`
+                            : `radial-gradient(circle at center, hsla(164,60%,44%,0.15), transparent 70%)`
                         }}
                       />
                       <div className="relative z-10">
@@ -1391,7 +1379,7 @@ export default function App() {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.6, duration: 0.4 }}
                           className="text-[10px] uppercase tracking-[0.22em] font-semibold mb-3"
-                          style={{ color: isEcho ? 'var(--color-error)' : 'var(--color-success)' }}
+                          style={{ color: isEcho ? 'var(--color-tension)' : 'var(--color-success)' }}
                         >
                           {isEcho ? 'Eliminated — They were the Echo!' : 'Eliminated — They were a Commoner'}
                         </motion.p>
@@ -1399,7 +1387,7 @@ export default function App() {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ delay: 0.7, type: 'spring', stiffness: 200, damping: 15 }}
-                          className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center text-[22px] font-bold"
+                          className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center text-[22px] font-bold font-sans"
                           style={{
                             backgroundColor: `${color}20`,
                             color,
@@ -1415,7 +1403,7 @@ export default function App() {
                         </p>
                         {isEcho && eliminated.word && (
                           <p className="text-[11px] text-text-secondary mt-1">
-                            Their secret word: <span className="font-mono font-semibold text-error uppercase">{eliminated.word}</span>
+                            Their secret word: <span className="font-mono font-semibold text-tension uppercase tracking-wider">{eliminated.word}</span>
                           </p>
                         )}
                       </div>
@@ -1429,7 +1417,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: 1.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="mt-6 surface-elevated rounded-[16px] p-5 text-center relative overflow-hidden"
+                    className="mt-6 surface-elevated rounded-[20px] p-5 text-center relative overflow-hidden"
                   >
                     <motion.div
                       animate={{ opacity: [0.05, 0.15, 0.05] }}
@@ -1437,8 +1425,8 @@ export default function App() {
                       className="absolute inset-0"
                       style={{
                         background: winnerId === 'VILLAGERS'
-                          ? 'radial-gradient(ellipse at center, hsla(142,52%,42%,0.15), transparent 70%)'
-                          : 'radial-gradient(ellipse at center, hsla(358,68%,48%,0.15), transparent 70%)'
+                          ? 'radial-gradient(ellipse at center, hsla(164,60%,44%,0.15), transparent 70%)'
+                          : 'radial-gradient(ellipse at center, hsla(12,76%,54%,0.15), transparent 70%)'
                       }}
                     />
                     <motion.p
@@ -1447,7 +1435,7 @@ export default function App() {
                       transition={{ delay: 1.4, duration: 0.4 }}
                       className={cn(
                         'relative z-10 text-[9px] font-extrabold uppercase tracking-[0.25em]',
-                        winnerId === 'VILLAGERS' ? 'text-success' : 'text-error'
+                        winnerId === 'VILLAGERS' ? 'text-success' : 'text-tension'
                       )}
                     >
                       {winnerId === 'VILLAGERS' ? 'Victory' : 'Defeat'}
@@ -1456,10 +1444,10 @@ export default function App() {
                       initial={{ opacity: 0, y: 6, scale: 0.9 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 1.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      className="relative z-10 text-[24px] font-extrabold tracking-[-0.03em] mt-0.5"
-                      style={{ color: winnerId === 'VILLAGERS' ? 'var(--color-success)' : 'var(--color-error)' }}
+                      className="relative z-10 text-[36px] font-display italic font-medium mt-0.5 lowercase"
+                      style={{ color: winnerId === 'VILLAGERS' ? 'var(--color-success)' : 'var(--color-tension)' }}
                     >
-                      {winnerId === 'VILLAGERS' ? 'VILLAGERS' : 'ECHO'}
+                      {winnerId === 'VILLAGERS' ? 'villagers' : 'echo'}
                     </motion.p>
                   </motion.div>
                 )}

@@ -17,7 +17,7 @@ export function CustomCheckbox({ checked, onChange, label, disabled }: CustomChe
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cn(
-        'flex items-center gap-2.5 select-none transition-all duration-200',
+        'flex items-center gap-2.5 select-none transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-md',
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
       )}
     >

@@ -42,7 +42,7 @@ export function Toggle({
         className={cn(
           'relative ml-3 flex h-5 w-9 shrink-0 rounded-full p-0.5 transition-colors border',
           checked
-            ? 'bg-text-primary border-transparent'
+            ? 'bg-accent border-transparent'
             : 'bg-bg-tertiary border-border/80 group-hover:border-border-hover/80'
         )}
       >
@@ -51,7 +51,7 @@ export function Toggle({
           transition={{ type: 'spring', stiffness: 500, damping: 28 }}
           className={cn(
             'h-3.5 w-3.5 rounded-full shadow-sm',
-            checked ? 'bg-bg translate-x-3.5' : 'bg-text-tertiary'
+            checked ? 'bg-white translate-x-3.5' : 'bg-text-tertiary'
           )}
         />
       </div>

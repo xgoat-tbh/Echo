@@ -58,7 +58,7 @@ export function Modal({
           />
           <motion.div
             className={cn(
-              'relative w-full rounded-2xl border border-border',
+              'relative w-full rounded-[24px] border border-border',
               'bg-bg-elevated/95 backdrop-blur-xl shadow-2xl',
               sizeStyles[size]
             )}
@@ -68,7 +68,7 @@ export function Modal({
             aria-label={title}
           >
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <h2 className="text-base font-bold text-text-primary tracking-tight">
+              <h2 className="text-[17px] font-semibold text-text-primary tracking-[-0.015em]">
                 {title}
               </h2>
               {showCloseButton && (

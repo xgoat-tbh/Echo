@@ -47,6 +47,7 @@ export function CustomSelect({ options, value, onChange, label, className }: Cus
           'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-[10px] text-[12px] font-medium transition-all duration-200 cursor-pointer select-none',
           'bg-bg-tertiary/30 border border-border/60 hover:border-border-hover/50',
           'text-text-primary',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
           open && 'border-border-hover/60 bg-bg-tertiary/50'
         )}
       >

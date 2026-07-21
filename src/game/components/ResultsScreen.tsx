@@ -61,18 +61,18 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
           'w-full rounded-2xl p-6 text-center relative overflow-hidden mb-6',
-          echoWon ? 'bg-error/15' : 'bg-success/15'
+          echoWon ? 'bg-tension/10 border border-tension/25' : 'bg-success/10 border border-success/25'
         )}
       >
         {/* Pulsing gradient background */}
         <motion.div
           animate={{ opacity: [0.1, 0.25, 0.1] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="absolute inset-0"
+          className="absolute inset-0 animate-pulse"
           style={{
             background: echoWon
-              ? 'radial-gradient(ellipse at center, hsla(358,68%,48%,0.15), transparent 70%)'
-              : 'radial-gradient(ellipse at center, hsla(142,52%,42%,0.15), transparent 70%)'
+              ? 'radial-gradient(ellipse at center, hsla(12,76%,54%,0.12), transparent 70%)'
+              : 'radial-gradient(ellipse at center, hsla(164,60%,44%,0.12), transparent 70%)'
           }}
         />
 
@@ -84,7 +84,7 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
           className="relative z-10 mx-auto mb-2"
         >
           {echoWon ? (
-            <Eye className="w-10 h-10 text-error mx-auto" />
+            <Eye className="w-10 h-10 text-tension mx-auto animate-pulse" />
           ) : (
             <Users className="w-10 h-10 text-success mx-auto" />
           )}
@@ -97,7 +97,7 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
           transition={{ delay: 0.4, duration: 0.4 }}
           className={cn(
             'relative z-10 text-[11px] font-extrabold uppercase tracking-[0.25em]',
-            echoWon ? 'text-error' : 'text-success'
+            echoWon ? 'text-tension' : 'text-success'
           )}
         >
           {echoWon ? 'Defeat' : 'Victory'}
@@ -108,10 +108,10 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
           initial={{ opacity: 0, y: 8, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.55, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 text-[42px] font-extrabold tracking-[-0.04em] leading-none mt-1 select-none"
-          style={{ color: echoWon ? 'var(--color-error)' : 'var(--color-success)' }}
+          className="relative z-10 text-[48px] font-medium font-display italic leading-none mt-1 select-none lowercase"
+          style={{ color: echoWon ? 'var(--color-tension)' : 'var(--color-success)' }}
         >
-          {echoWon ? 'ECHO' : 'VILLAGERS'}
+          {echoWon ? 'echo' : 'villagers'}
         </motion.h2>
 
         {/* Subtitle */}
@@ -129,18 +129,18 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
       </motion.div>
 
       {/* ─── TEAMS LINEUP (Among Us style) ─── */}
-      <div className="w-full mb-6 space-y-3">
+      <div className="w-full mb-6 space-y-4">
         {/* Echoes (Impostors) */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.7, duration: 0.4 }}
         >
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <Swords className="w-3.5 h-3.5 text-error" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-error">{echoPlayers.length} Impostor{echoPlayers.length > 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-2 mb-2.5 px-1">
+            <Swords className="w-3.5 h-3.5 text-tension" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-tension">{echoPlayers.length} Echo{echoPlayers.length > 1 ? 'es' : ''}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {echoPlayers.map((p, idx) => {
               const color = getPlayerColor(p.id, players.indexOf(p))
               return (
@@ -150,19 +150,19 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: 0.8 + idx * 0.08, duration: 0.3 }}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-[12px] flex-1 min-w-0',
+                    'flex items-center gap-2 px-3.5 py-2.5 rounded-[16px] flex-1 min-w-0 surface-card border-l-2',
                     p.eliminated ? 'opacity-40' : ''
                   )}
-                  style={{ backgroundColor: `${color}10`, borderLeft: `3px solid ${color}` }}
+                  style={{ borderLeftColor: color }}
                 >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ backgroundColor: `${color}20`, color }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 font-sans" style={{ backgroundColor: `${color}15`, color }}>
                     {p.nickname.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[12px] font-semibold text-text-primary truncate block">{p.nickname}</span>
-                    {p.word && <span className="text-[9px] text-text-tertiary font-mono uppercase block truncate">{p.word}</span>}
+                    <span className="text-[12px] font-semibold text-text-primary truncate block tracking-tight">{p.nickname}</span>
+                    {p.word && <span className="text-[9px] text-text-tertiary font-mono uppercase block truncate tracking-wider">{p.word}</span>}
                   </div>
-                  <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-error bg-error/10 px-1.5 py-0.5 rounded shrink-0">Echo</span>
+                  <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-tension bg-tension/10 px-1.5 py-0.5 rounded shrink-0">Echo</span>
                 </motion.div>
               )
             })}
@@ -175,11 +175,11 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.9, duration: 0.4 }}
         >
-          <div className="flex items-center gap-2 mb-2 px-1">
+          <div className="flex items-center gap-2 mb-2.5 px-1">
             <Users className="w-3.5 h-3.5 text-success" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-success">{commonerPlayers.length} Crewmate{commonerPlayers.length > 1 ? 's' : ''}</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-success">{commonerPlayers.length} Commoner{commonerPlayers.length > 1 ? 's' : ''}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {commonerPlayers.map((p, idx) => {
               const color = getPlayerColor(p.id, players.indexOf(p))
               return (
@@ -189,23 +189,23 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: 1.0 + idx * 0.05, duration: 0.3 }}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-[12px] flex-1 min-w-0',
+                    'flex items-center gap-2 px-3.5 py-2.5 rounded-[16px] min-w-0 surface-card border-l-2',
                     p.eliminated ? 'opacity-40' : ''
                   )}
-                  style={{ backgroundColor: `${color}08`, borderLeft: `3px solid ${color}60` }}
+                  style={{ borderLeftColor: `${color}60` }}
                 >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ backgroundColor: `${color}15`, color }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 font-sans" style={{ backgroundColor: `${color}10`, color }}>
                     {p.nickname.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[12px] font-semibold text-text-primary truncate block">{p.nickname}</span>
-                    {p.word && <span className="text-[9px] text-text-tertiary font-mono uppercase block truncate">{p.word}</span>}
+                    <span className="text-[12px] font-semibold text-text-primary truncate block tracking-tight">{p.nickname}</span>
+                    {p.word && <span className="text-[9px] text-text-tertiary font-mono uppercase block truncate tracking-wider">{p.word}</span>}
                   </div>
                   <span className={cn(
                     'text-[8px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded shrink-0',
                     p.eliminated ? 'text-text-tertiary bg-bg-tertiary/30' : 'text-success bg-success/10'
                   )}>
-                    {p.eliminated ? 'Ejected' : 'Alive'}
+                    {p.eliminated ? 'ejected' : 'alive'}
                   </span>
                 </motion.div>
               )
@@ -221,8 +221,8 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
         transition={{ delay: 1.2, duration: 0.4 }}
         className="w-full mb-6"
       >
-        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-text-tertiary mb-3">Voting Recap</p>
-        <div className="space-y-1">
+        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-text-tertiary mb-3 px-1">Voting Recap</p>
+        <div className="space-y-1.5">
           {sortedPlayers.map((player, idx) => {
             const count = voteCounts.get(player.id) || 0
             const barWidth = maxVotes > 0 ? (count / maxVotes) * 100 : 0
@@ -235,13 +235,13 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.3 + idx * 0.04, duration: 0.3 }}
-                className="flex items-center gap-3 rounded-[14px] px-4 py-2.5"
-                style={isEcho ? { backgroundColor: `${color}08` } : {}}
+                className="flex items-center gap-3 rounded-[14px] px-4 py-2.5 hover:bg-bg-secondary/30 transition-colors"
+                style={isEcho ? { backgroundColor: 'var(--color-tension-subtle, hsla(12,76%,54%,0.05))' } : {}}
               >
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: `${color}15`, color }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 font-sans" style={{ backgroundColor: `${color}15`, color }}>
                   {player.nickname.charAt(0).toUpperCase()}
                 </div>
-                <span className="flex-1 text-[12px] font-semibold min-w-0 truncate" style={{ color: isEcho ? 'var(--color-error)' : 'var(--color-text-primary)' }}>
+                <span className="flex-1 text-[13px] font-semibold min-w-0 truncate tracking-tight" style={{ color: isEcho ? 'var(--color-tension)' : 'var(--color-text-primary)' }}>
                   {player.nickname}
                 </span>
                 <div className="flex items-center gap-2.5 shrink-0">
@@ -251,10 +251,10 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
                       animate={{ width: `${barWidth}%` }}
                       transition={{ delay: 1.5 + idx * 0.04, duration: 0.5 }}
                       className="h-full rounded-full"
-                      style={{ backgroundColor: isEcho ? 'var(--color-error)' : 'var(--color-text-primary)' }}
+                      style={{ backgroundColor: isEcho ? 'var(--color-tension)' : 'var(--color-accent)' }}
                     />
                   </div>
-                  <span className="text-[11px] font-mono font-medium text-text-tertiary tabular-nums w-4 text-right">{count}</span>
+                  <span className="text-[11px] font-mono font-semibold text-text-tertiary tabular-nums w-4 text-right">{count}</span>
                 </div>
               </motion.div>
             )
@@ -267,18 +267,18 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.8, duration: 0.4 }}
-            className="mt-3 surface-card rounded-[14px] p-3"
+            className="mt-4.5 surface-card rounded-[16px] p-4 border border-border"
           >
-            <p className="text-[9px] uppercase tracking-[0.2em] font-semibold text-text-tertiary mb-2">Vote Trail</p>
-            <div className="space-y-1">
+            <p className="text-[9px] uppercase tracking-[0.2em] font-semibold text-text-tertiary mb-3.5">Vote Trail</p>
+            <div className="space-y-1.5">
               {votes.map((v, i) => {
                 const voter = players.find(p => p.id === v.voterId)
                 const target = players.find(p => p.id === v.targetId)
                 if (!voter || !target) return null
                 return (
-                  <div key={i} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+                  <div key={i} className="flex items-center gap-2 text-[11px] text-text-secondary tracking-tight">
                     <span className="font-semibold" style={{ color: getPlayerColor(voter.id, players.indexOf(voter)) }}>{voter.nickname}</span>
-                    <span className="text-text-tertiary">→</span>
+                    <span className="text-text-tertiary select-none">→</span>
                     <span className="font-semibold" style={{ color: getPlayerColor(target.id, players.indexOf(target)) }}>{target.nickname}</span>
                   </div>
                 )
@@ -293,19 +293,19 @@ export function ResultsScreen({ players, revealedEchoId, votes, winnerId, onPlay
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 2.0, duration: 0.4 }}
-        className="flex gap-2.5 w-full"
+        className="flex gap-2.5 w-full mt-2"
       >
         <motion.button
           onClick={onPlayAgain}
           whileTap={{ scale: 0.97 }}
-          className="flex-1 btn-primary cursor-pointer"
+          className="flex-1 btn-primary cursor-pointer font-semibold flex items-center justify-center gap-1.5"
         >
-          <Crown className="w-4 h-4" /> Play Again
+          <Crown className="w-3.5 h-3.5" /> Play Again
         </motion.button>
         <motion.button
           onClick={onLeave}
           whileTap={{ scale: 0.97 }}
-          className="flex-1 btn-secondary cursor-pointer"
+          className="flex-1 btn-secondary cursor-pointer font-semibold"
         >
           Leave
         </motion.button>

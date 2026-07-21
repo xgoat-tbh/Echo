@@ -53,8 +53,9 @@ export function VotePanel({ players, localPlayerId, hasVoted, onVote }: VotePane
               className={cn(
                 'flex flex-col items-center justify-center gap-3 rounded-[16px] surface-card p-5 text-center relative overflow-hidden',
                 'transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer',
+                'hover:border-tension/30 hover:bg-tension/[0.01]',
                 isSelected
-                  ? 'ring-2 ring-offset-2 ring-offset-bg'
+                  ? 'ring-2 ring-tension ring-offset-2 ring-offset-bg'
                   : 'hover:-translate-y-0.5 active:translate-y-0'
               )}
             >
@@ -63,7 +64,7 @@ export function VotePanel({ players, localPlayerId, hasVoted, onVote }: VotePane
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="absolute inset-0 rounded-[16px]"
-                  style={{ backgroundColor: `${color}12` }}
+                  style={{ backgroundColor: `var(--color-tension-subtle, hsla(12, 76%, 54%, 0.08))` }}
                 />
               )}
               <div className="relative z-10">
@@ -80,8 +81,7 @@ export function VotePanel({ players, localPlayerId, hasVoted, onVote }: VotePane
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.12em] z-10"
-                  style={{ color }}
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.12em] z-10 text-tension"
                 >
                   Selected
                 </motion.div>

@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState } from 'react'
 
 interface PhaseBannerProps {
   phase: string
@@ -7,16 +6,22 @@ interface PhaseBannerProps {
   onDone?: () => void
 }
 
-const phaseNames: Record<string, { title: string; subtitle: string }> = {
-  ASSIGNING: { title: 'Assigning Words', subtitle: 'Check your secret word' },
-  CLUE: { title: 'Clue Phase', subtitle: 'Give one clue about your word' },
-  DISCUSSION: { title: 'Discussion', subtitle: 'Debate who sounds suspicious' },
-  VOTING: { title: 'Voting', subtitle: 'Who is the Echo?' },
-  REVEAL: { title: 'Reveal', subtitle: 'The votes are in...' },
+interface PhaseInfo {
+  title: string
+  subtitle: string
+  colorClass: string
+}
+
+const phaseNames: Record<string, PhaseInfo> = {
+  ASSIGNING: { title: 'Assigning Words', subtitle: 'Check your secret word', colorClass: 'text-text-primary' },
+  CLUE: { title: 'Clue Phase', subtitle: 'Give one clue about your word', colorClass: 'text-accent' },
+  DISCUSSION: { title: 'Discussion', subtitle: 'Debate who sounds suspicious', colorClass: 'text-warning' },
+  VOTING: { title: 'Voting', subtitle: 'Who is the Echo?', colorClass: 'text-tension' },
+  REVEAL: { title: 'Reveal', subtitle: 'The votes are in...', colorClass: 'text-tension' },
 }
 
 export function PhaseBanner({ phase, show, onDone }: PhaseBannerProps) {
-  const info = phaseNames[phase] || { title: phase, subtitle: '' }
+  const info = phaseNames[phase] || { title: phase, subtitle: '', colorClass: 'text-text-primary' }
 
   return (
     <AnimatePresence onExitComplete={onDone}>
@@ -36,7 +41,7 @@ export function PhaseBanner({ phase, show, onDone }: PhaseBannerProps) {
             className="text-center"
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-text-tertiary mb-2">{info.subtitle}</p>
-            <p className="text-[28px] font-extrabold text-text-primary tracking-[-0.03em]">{info.title}</p>
+            <p className={`text-[28px] font-extrabold tracking-[-0.03em] ${info.colorClass}`}>{info.title}</p>
           </motion.div>
         </motion.div>
       )}

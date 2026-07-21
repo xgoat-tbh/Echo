@@ -92,10 +92,10 @@ export function CustomWordsModal({ open, onClose, onSubmit, currentPairs }: Cust
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 w-full max-w-lg surface-elevated rounded-2xl p-6 max-h-[85vh] flex flex-col shadow-2xl"
+            className="relative z-10 w-full max-w-lg surface-elevated rounded-[24px] p-6 max-h-[85vh] flex flex-col shadow-2xl"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-text-primary tracking-[-0.02em]">Custom Word Pairs</h2>
+              <h2 className="text-[17px] font-semibold text-text-primary tracking-[-0.015em]">Custom Word Pairs</h2>
               <button onClick={onClose} className="p-1.5 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-tertiary/40 transition-all duration-200 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>

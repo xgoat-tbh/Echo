@@ -2,48 +2,39 @@
 
 @theme {
   /* ─── Surfaces (Dark) ─── */
-  --color-bg: hsl(240, 10%, 3.5%);
-  --color-bg-secondary: hsl(240, 7%, 6%);
-  --color-bg-tertiary: hsl(240, 5%, 9.5%);
-  --color-bg-elevated: hsl(240, 5%, 13%);
+  --color-bg: hsl(228, 12%, 5%);
+  --color-bg-secondary: hsl(228, 10%, 8%);
+  --color-bg-tertiary: hsl(228, 8%, 12%);
+  --color-bg-elevated: hsl(228, 8%, 15%);
 
   /* ─── Borders ─── */
-  --color-border: hsla(240, 5%, 90%, 0.06);
-  --color-border-hover: hsla(240, 5%, 90%, 0.12);
-  --color-border-active: hsla(240, 5%, 90%, 0.22);
+  --color-border: hsla(228, 10%, 90%, 0.06);
+  --color-border-hover: hsla(228, 10%, 90%, 0.12);
+  --color-border-active: hsla(228, 10%, 90%, 0.22);
 
   /* ─── Text ─── */
-  --color-text-primary: hsl(0, 0%, 96%);
-  --color-text-secondary: hsl(240, 4%, 56%);
-  --color-text-tertiary: hsl(240, 4%, 36%);
-  --color-text-inverse: hsl(240, 10%, 4%);
+  --color-text-primary: hsl(0, 0%, 95%);
+  --color-text-secondary: hsl(228, 6%, 52%);
+  --color-text-tertiary: hsl(228, 6%, 34%);
+  --color-text-inverse: hsl(228, 12%, 4%);
 
   /* ─── Accent ─── */
-  --color-accent: hsl(0, 0%, 96%);
-  --color-accent-hover: hsl(240, 5%, 82%);
-  --color-accent-subtle: hsla(0, 0%, 96%, 0.06);
+  --color-accent: hsl(231, 48%, 56%);
+  --color-accent-hover: hsl(231, 50%, 62%);
+  --color-accent-subtle: hsla(231, 48%, 56%, 0.08);
 
   /* ─── Semantic ─── */
-  --color-success: hsl(142, 52%, 42%);
-  --color-warning: hsl(47, 90%, 42%);
-  --color-error: hsl(358, 68%, 48%);
+  --color-success: hsl(164, 60%, 44%);
+  --color-warning: hsl(38, 76%, 52%);
+  --color-error: hsl(348, 72%, 52%);
+  --color-tension: hsl(12, 76%, 54%);
 
-  --color-speaking-glow: hsla(142, 52%, 42%, 0.12);
-
-  /* ─── Light theme accent ─── */
-  --color-accent-light: hsl(223, 100%, 62%);
-  --color-accent-light-hover: hsl(223, 90%, 55%);
-
-  /* ─── Premium accent palette ─── */
-  --color-rose: hsl(340, 82%, 52%);
-  --color-amber: hsl(35, 92%, 50%);
-  --color-emerald: hsl(160, 84%, 39%);
-  --color-cyan: hsl(190, 80%, 50%);
-  --color-violet: hsl(270, 80%, 60%);
+  --color-speaking-glow: hsla(164, 60%, 44%, 0.12);
 
   /* ─── Type ─── */
-  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 
   /* ─── Z-layers ─── */
   --z-modal: 100;
@@ -59,87 +50,88 @@
 
 /* ─── Light Mode ─── */
 .light {
-  --color-bg: hsl(0, 0%, 97%);
-  --color-bg-secondary: hsl(0, 0%, 94%);
-  --color-bg-tertiary: hsl(0, 0%, 89%);
+  --color-bg: hsl(228, 12%, 97%);
+  --color-bg-secondary: hsl(228, 10%, 94%);
+  --color-bg-tertiary: hsl(228, 8%, 89%);
   --color-bg-elevated: hsl(0, 0%, 100%);
 
-  --color-border: hsla(0, 0%, 0%, 0.06);
-  --color-border-hover: hsla(0, 0%, 0%, 0.12);
-  --color-border-active: hsla(0, 0%, 0%, 0.2);
+  --color-border: hsla(228, 10%, 10%, 0.06);
+  --color-border-hover: hsla(228, 10%, 10%, 0.12);
+  --color-border-active: hsla(228, 10%, 10%, 0.2);
 
-  --color-text-primary: hsl(0, 0%, 12%);
-  --color-text-secondary: hsl(0, 0%, 38%);
-  --color-text-tertiary: hsl(0, 0%, 56%);
+  --color-text-primary: hsl(228, 12%, 12%);
+  --color-text-secondary: hsl(228, 8%, 42%);
+  --color-text-tertiary: hsl(228, 8%, 60%);
   --color-text-inverse: hsl(0, 0%, 96%);
 
-  --color-accent: hsl(223, 100%, 62%);
-  --color-accent-hover: hsl(223, 90%, 55%);
-  --color-accent-subtle: hsla(223, 100%, 62%, 0.08);
+  --color-accent: hsl(231, 48%, 56%);
+  --color-accent-hover: hsl(231, 50%, 62%);
+  --color-accent-subtle: hsla(231, 48%, 56%, 0.08);
 
-  --color-success: hsl(142, 55%, 38%);
-  --color-warning: hsl(38, 92%, 42%);
-  --color-error: hsl(358, 65%, 44%);
+  --color-success: hsl(164, 60%, 38%);
+  --color-warning: hsl(38, 76%, 42%);
+  --color-error: hsl(348, 72%, 46%);
+  --color-tension: hsl(12, 76%, 48%);
 
-  --color-speaking-glow: hsla(142, 55%, 38%, 0.1);
+  --color-speaking-glow: hsla(164, 60%, 38%, 0.1);
 }
 
 /* ─── Light mode overrides for hardcoded CSS classes ─── */
 .light ::selection {
-  background: hsla(223, 100%, 62%, 0.12);
+  background: hsla(231, 48%, 56%, 0.12);
 }
 
 .light ::-webkit-scrollbar-thumb {
-  background: hsla(0, 0%, 0%, 0.08);
+  background: hsla(228, 10%, 10%, 0.08);
 }
 
 .light ::-webkit-scrollbar-thumb:hover {
-  background: hsla(0, 0%, 0%, 0.14);
+  background: hsla(228, 10%, 10%, 0.14);
 }
 
 .light :focus-visible {
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(223, 100%, 62%, 0.2);
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(231, 48%, 56%, 0.2);
 }
 
 .light .bg-ambient::before {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(223, 40%, 75%, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(0, 0%, 60%, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, hsla(223, 30%, 85%, 0.04) 0%, transparent 80%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(231, 40%, 75%, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(228, 10%, 60%, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, hsla(231, 30%, 85%, 0.03) 0%, transparent 80%);
 }
 
 .light .bg-ambient::after {
-  background: radial-gradient(ellipse at center, transparent 50%, hsla(0, 0%, 50%, 0.08) 100%);
+  background: radial-gradient(ellipse at center, transparent 50%, hsla(228, 10%, 50%, 0.06) 100%);
 }
 
 .light .surface-elevated {
   background: hsla(0, 0%, 100%, 0.8);
-  border: 1px solid hsla(0, 0%, 0%, 0.04);
+  border: 1px solid hsla(228, 10%, 10%, 0.04);
   box-shadow:
-    0 0 0 1px hsla(0, 0%, 0%, 0.02),
-    0 2px 8px -2px hsla(0, 0%, 0%, 0.06),
-    0 8px 24px -4px hsla(0, 0%, 0%, 0.04);
+    0 0 0 1px hsla(228, 10%, 10%, 0.01),
+    0 2px 8px -2px hsla(228, 10%, 10%, 0.05),
+    0 8px 24px -4px hsla(228, 10%, 10%, 0.03);
 }
 
 .light .surface-card {
-  background: hsla(0, 0%, 100%, 0.7);
-  border: 1px solid hsla(0, 0%, 0%, 0.04);
+  background: hsla(0, 0%, 100%, 0.65);
+  border: 1px solid hsla(228, 10%, 10%, 0.03);
   box-shadow:
-    0 1px 3px hsla(0, 0%, 0%, 0.04),
-    0 4px 12px -2px hsla(0, 0%, 0%, 0.03);
+    0 1px 3px hsla(228, 10%, 10%, 0.03),
+    0 4px 12px -2px hsla(228, 10%, 10%, 0.02);
 }
 
 .light .surface-inset {
-  background: hsla(0, 0%, 90%, 0.3);
-  border: 1px solid hsla(0, 0%, 0%, 0.04);
-  box-shadow: inset 0 1px 4px hsla(0, 0%, 0%, 0.04);
+  background: hsla(228, 10%, 90%, 0.25);
+  border: 1px solid hsla(228, 10%, 10%, 0.03);
+  box-shadow: inset 0 1px 3px hsla(228, 10%, 10%, 0.03);
 }
 
 .light .input-premium {
-  background: hsla(0, 0%, 100%, 0.8);
-  border: 1px solid hsla(0, 0%, 0%, 0.06);
+  background: hsla(0, 0%, 100%, 0.75);
+  border: 1px solid hsla(228, 10%, 10%, 0.05);
   color: var(--color-text-primary);
-  box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.04);
+  box-shadow: inset 0 1px 3px hsla(228, 10%, 10%, 0.03);
 }
 
 .light .input-premium::placeholder {
@@ -147,54 +139,54 @@
 }
 
 .light .input-premium:hover {
-  border-color: hsla(0, 0%, 0%, 0.1);
-  background: hsla(0, 0%, 100%, 0.9);
+  border-color: hsla(228, 10%, 10%, 0.08);
+  background: hsla(0, 0%, 100%, 0.85);
 }
 
 .light .input-premium:focus {
-  border-color: hsla(223, 100%, 62%, 0.3);
-  background: hsla(0, 0%, 100%, 1);
+  border-color: hsla(231, 48%, 56%, 0.3);
+  background: hsla(0, 0%, 100%, 0.95);
   box-shadow:
-    inset 0 1px 3px hsla(0, 0%, 0%, 0.04),
-    0 0 0 3px hsla(223, 100%, 62%, 0.08);
+    inset 0 1px 3px hsla(228, 10%, 10%, 0.03),
+    0 0 0 3px hsla(231, 48%, 56%, 0.08);
 }
 
 .light .btn-primary {
-  background: hsl(223, 100%, 62%);
+  background: hsl(231, 48%, 56%);
   color: white;
   box-shadow:
-    0 1px 2px hsla(223, 100%, 62%, 0.3),
-    0 4px 12px -2px hsla(223, 100%, 62%, 0.2),
+    0 1px 2px hsla(231, 48%, 56%, 0.25),
+    0 4px 12px -2px hsla(231, 48%, 56%, 0.15),
     inset 0 1px 0 hsla(0, 0%, 100%, 0.15);
 }
 
 .light .btn-primary:hover {
-  background: hsl(223, 90%, 55%);
+  background: hsl(231, 50%, 62%);
 }
 
 .light .btn-primary:active {
   box-shadow:
-    0 1px 2px hsla(223, 100%, 62%, 0.3),
+    0 1px 2px hsla(231, 48%, 56%, 0.2),
     inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
 }
 
 .light .btn-secondary {
-  background: hsla(0, 0%, 100%, 0.8);
+  background: hsla(0, 0%, 100%, 0.75);
   color: var(--color-text-primary);
-  border: 1px solid hsla(0, 0%, 0%, 0.06);
-  box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.03);
+  border: 1px solid hsla(228, 10%, 10%, 0.05);
+  box-shadow: 0 1px 3px hsla(228, 10%, 10%, 0.02);
 }
 
 .light .btn-secondary:hover {
-  background: hsla(0, 0%, 100%, 0.9);
-  border-color: hsla(0, 0%, 0%, 0.1);
+  background: hsla(0, 0%, 100%, 0.85);
+  border-color: hsla(228, 10%, 10%, 0.08);
   box-shadow:
-    0 2px 6px hsla(0, 0%, 0%, 0.04),
-    0 6px 16px -4px hsla(0, 0%, 0%, 0.03);
+    0 2px 6px hsla(228, 10%, 10%, 0.03),
+    0 6px 16px -4px hsla(228, 10%, 10%, 0.02);
 }
 
 .light .divider {
-  background: linear-gradient(90deg, transparent, hsla(0, 0%, 0%, 0.04) 20%, hsla(0, 0%, 0%, 0.04) 80%, transparent);
+  background: linear-gradient(90deg, transparent, hsla(228, 10%, 10%, 0.04) 20%, hsla(228, 10%, 10%, 0.04) 80%, transparent);
 }
 
 @layer base {
@@ -244,7 +236,7 @@
   }
 
   ::selection {
-    background: hsla(0, 0%, 96%, 0.1);
+    background: hsla(231, 48%, 56%, 0.12);
     color: var(--color-text-primary);
   }
 
@@ -259,18 +251,18 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsla(240, 5%, 90%, 0.08);
+    background: hsla(228, 10%, 90%, 0.06);
     border-radius: 99px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsla(240, 5%, 90%, 0.14);
+    background: hsla(228, 10%, 90%, 0.12);
   }
 
   /* ─── Focus Outline System ─── */
   :focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(0, 0%, 96%, 0.15);
+    box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px hsla(231, 48%, 56%, 0.2);
   }
 }
 
@@ -286,9 +278,9 @@
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(240, 15%, 18%, 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(240, 10%, 10%, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, hsla(240, 8%, 6%, 0.4) 0%, transparent 80%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsla(231, 48%, 56%, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, hsla(228, 12%, 10%, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, hsla(228, 12%, 6%, 0.35) 0%, transparent 80%);
 }
 
 /* ─── Vignette (very subtle) ─── */
@@ -298,46 +290,46 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, hsla(240, 10%, 2%, 0.5) 100%);
+  background: radial-gradient(ellipse at center, transparent 50%, hsla(228, 15%, 2%, 0.45) 100%);
 }
 
 /* ─── Premium Surface Layers ─── */
 .surface-elevated {
-  background: hsla(240, 6%, 8%, 0.6);
-  border: 1px solid hsla(240, 5%, 90%, 0.05);
+  background: hsla(228, 10%, 8%, 0.65);
+  border: 1px solid hsla(228, 10%, 90%, 0.05);
   box-shadow:
-    0 0 0 1px hsla(240, 5%, 90%, 0.02),
-    0 2px 8px -2px hsla(0, 0%, 0%, 0.3),
-    0 8px 24px -4px hsla(0, 0%, 0%, 0.2);
+    0 0 0 1px hsla(228, 10%, 90%, 0.01),
+    0 2px 8px -2px hsla(0, 0%, 0%, 0.25),
+    0 8px 24px -4px hsla(0, 0%, 0%, 0.15);
 }
 
 .surface-card {
-  background: hsla(240, 6%, 7%, 0.5);
-  border: 1px solid hsla(240, 5%, 90%, 0.04);
+  background: hsla(228, 10%, 7%, 0.5);
+  border: 1px solid hsla(228, 10%, 90%, 0.04);
   box-shadow:
-    0 1px 3px hsla(0, 0%, 0%, 0.25),
-    0 4px 12px -2px hsla(0, 0%, 0%, 0.15);
+    0 1px 3px hsla(0, 0%, 0%, 0.2),
+    0 4px 12px -2px hsla(0, 0%, 0%, 0.1);
 }
 
 .surface-inset {
-  background: hsla(240, 8%, 4%, 0.5);
-  border: 1px solid hsla(240, 5%, 90%, 0.03);
-  box-shadow: inset 0 1px 4px hsla(0, 0%, 0%, 0.25);
+  background: hsla(228, 12%, 4%, 0.55);
+  border: 1px solid hsla(228, 10%, 90%, 0.03);
+  box-shadow: inset 0 1px 4px hsla(0, 0%, 0%, 0.2);
 }
 
 /* ─── Premium Input ─── */
 .input-premium {
   height: 52px;
   padding: 0 20px;
-  background: hsla(240, 8%, 5%, 0.6);
-  border: 1px solid hsla(240, 5%, 90%, 0.06);
+  background: hsla(228, 12%, 5%, 0.65);
+  border: 1px solid hsla(228, 10%, 90%, 0.06);
   border-radius: 14px;
   color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 450;
   letter-spacing: -0.006em;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.2);
+  box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.25);
 }
 
 .input-premium::placeholder {
@@ -347,25 +339,25 @@
 }
 
 .input-premium:hover {
-  border-color: hsla(240, 5%, 90%, 0.1);
-  background: hsla(240, 8%, 6%, 0.7);
+  border-color: hsla(228, 10%, 90%, 0.1);
+  background: hsla(228, 10%, 6%, 0.75);
 }
 
 .input-premium:focus {
   outline: none;
-  border-color: hsla(240, 5%, 90%, 0.18);
-  background: hsla(240, 8%, 7%, 0.8);
+  border-color: hsla(231, 48%, 56%, 0.35);
+  background: hsla(228, 10%, 7%, 0.85);
   box-shadow:
-    inset 0 1px 3px hsla(0, 0%, 0%, 0.2),
-    0 0 0 3px hsla(0, 0%, 96%, 0.04);
+    inset 0 1px 3px hsla(0, 0%, 0%, 0.25),
+    0 0 0 3px hsla(231, 48%, 56%, 0.08);
 }
 
 /* ─── Premium Button ─── */
 .btn-primary {
   height: 52px;
   padding: 0 28px;
-  background: var(--color-text-primary);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: white;
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.01em;
@@ -374,29 +366,29 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow:
-    0 1px 2px hsla(0, 0%, 0%, 0.4),
-    0 4px 12px -2px hsla(0, 0%, 0%, 0.2),
-    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+    0 1px 2px hsla(231, 48%, 56%, 0.25),
+    0 4px 12px -2px hsla(231, 48%, 56%, 0.15),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
 }
 
 .btn-primary:hover {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
   box-shadow:
-    0 2px 4px hsla(0, 0%, 0%, 0.4),
-    0 8px 20px -4px hsla(0, 0%, 0%, 0.25),
-    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+    0 2px 4px hsla(231, 48%, 56%, 0.3),
+    0 8px 20px -4px hsla(231, 48%, 56%, 0.2),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
 }
 
 .btn-primary:active {
   transform: translateY(0);
   box-shadow:
-    0 1px 2px hsla(0, 0%, 0%, 0.4),
-    inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
+    0 1px 2px hsla(231, 48%, 56%, 0.2),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
 }
 
 .btn-primary:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -405,12 +397,12 @@
 .btn-secondary {
   height: 52px;
   padding: 0 24px;
-  background: hsla(240, 6%, 8%, 0.6);
+  background: hsla(228, 10%, 8%, 0.6);
   color: var(--color-text-primary);
   font-weight: 550;
   font-size: 14px;
   letter-spacing: 0;
-  border: 1px solid hsla(240, 5%, 90%, 0.06);
+  border: 1px solid hsla(228, 10%, 90%, 0.06);
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -418,12 +410,12 @@
 }
 
 .btn-secondary:hover {
-  background: hsla(240, 6%, 10%, 0.7);
-  border-color: hsla(240, 5%, 90%, 0.1);
+  background: hsla(228, 10%, 10%, 0.7);
+  border-color: hsla(228, 10%, 90%, 0.1);
   transform: translateY(-1px);
   box-shadow:
-    0 2px 6px hsla(0, 0%, 0%, 0.25),
-    0 6px 16px -4px hsla(0, 0%, 0%, 0.15);
+    0 2px 6px hsla(0, 0%, 0%, 0.2),
+    0 6px 16px -4px hsla(0, 0%, 0%, 0.1);
 }
 
 .btn-secondary:active {
@@ -433,7 +425,7 @@
 /* ─── Divider ─── */
 .divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, hsla(240, 5%, 90%, 0.06) 20%, hsla(240, 5%, 90%, 0.06) 80%, transparent);
+  background: linear-gradient(90deg, transparent, hsla(228, 10%, 90%, 0.06) 20%, hsla(228, 10%, 90%, 0.06) 80%, transparent);
 }
 
 /* ─── Animations ─── */

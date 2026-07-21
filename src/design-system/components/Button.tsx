@@ -21,28 +21,16 @@ interface ButtonProps {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: [
-    'bg-text-primary text-bg font-semibold',
-    'shadow-[0_1px_2px_hsla(0,0%,0%,0.4),0_4px_12px_-2px_hsla(0,0%,0%,0.2),inset_0_1px_0_hsla(0,0%,100%,0.06)]',
-    'hover:bg-accent-hover',
-    'active:shadow-[0_1px_2px_hsla(0,0%,0%,0.4),inset_0_1px_0_hsla(0,0%,100%,0.04)]',
-    'border border-transparent',
-  ].join(' '),
-  secondary: [
-    'bg-[hsla(240,6%,8%,0.6)] text-text-primary font-medium',
-    'border border-[hsla(240,5%,90%,0.06)]',
-    'shadow-[0_1px_3px_hsla(0,0%,0%,0.2)]',
-    'hover:bg-[hsla(240,6%,10%,0.7)] hover:border-[hsla(240,5%,90%,0.1)]',
-    'active:bg-[hsla(240,6%,8%,0.8)]',
-  ].join(' '),
+  primary: 'btn-primary border border-transparent font-semibold',
+  secondary: 'btn-secondary font-semibold',
   ghost: [
     'text-text-secondary font-medium',
     'hover:text-text-primary hover:bg-bg-tertiary/40',
     'active:bg-bg-tertiary/50',
   ].join(' '),
   danger: [
-    'bg-error/8 text-error/80 font-medium',
-    'hover:bg-error/12 hover:text-error',
+    'bg-error/8 text-error/80 font-semibold border border-error/10',
+    'hover:bg-error/12 hover:text-error hover:border-error/20',
     'active:bg-error/16',
   ].join(' '),
   icon: [
@@ -93,7 +81,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           'inline-flex items-center justify-center select-none cursor-pointer',
           'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsla(0,0%,96%,0.15)] focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsla(231,48%,56%,0.2)] focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
           'disabled:opacity-25 disabled:pointer-events-none disabled:shadow-none',
           variantStyles[variant],
           sizeStyles[size],

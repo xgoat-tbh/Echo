@@ -23,19 +23,27 @@ export function Timer({ value, max }: TimerProps) {
         <svg width="60" height="60" viewBox="0 0 60 60" className="transform -rotate-90">
           <circle cx="30" cy="30" r={radius} fill="none" stroke="currentColor" className="text-bg-tertiary/40" strokeWidth="3" />
           <circle
-            cx="30" cy="30" r={radius} fill="none"
+            cx="30"
+            cy="30"
+            r={radius}
+            fill="none"
             stroke="currentColor"
-            className={cn('transition-all duration-1000 linear', urgent ? 'text-error/80' : 'text-text-primary/40')}
+            className={cn(
+              'transition-all duration-1000 linear',
+              urgent ? 'text-tension' : 'text-accent'
+            )}
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
           />
         </svg>
-        <span className={cn(
-          'absolute text-[13px] font-mono font-bold tabular-nums',
-          urgent ? 'text-error/80' : 'text-text-primary'
-        )}>
+        <span
+          className={cn(
+            'absolute text-[13px] font-mono font-semibold tabular-nums tracking-wide',
+            urgent ? 'text-tension animate-pulse' : 'text-text-primary'
+          )}
+        >
           {display}
         </span>
       </div>

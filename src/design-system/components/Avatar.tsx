@@ -43,18 +43,32 @@ export function Avatar({
     .slice(0, 2)
 
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0 select-none">
       <motion.div
         animate={
           isSpeaking
-            ? { scale: 1.05 }
-            : { scale: 1 }
+            ? {
+                scale: 1.04,
+                boxShadow: [
+                  '0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-success)',
+                  '0 0 0 2px var(--color-bg), 0 0 10px 5px var(--color-speaking-glow)',
+                  '0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-success)',
+                ],
+              }
+            : {
+                scale: 1,
+                boxShadow: '0 0 0 0px var(--color-bg), 0 0 0 0px transparent',
+              }
         }
-        transition={{ duration: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
-        className={cn(
-          'overflow-hidden rounded-full',
-          isSpeaking && 'ring-2 ring-accent'
-        )}
+        transition={
+          isSpeaking
+            ? {
+                scale: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                boxShadow: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+              }
+            : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
+        }
+        className="overflow-hidden rounded-full bg-bg-secondary"
         style={{ width: px, height: px }}
       >
         {src && !imgError ? (
@@ -69,7 +83,7 @@ export function Avatar({
           />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center bg-bg-tertiary/60 text-text-secondary font-medium"
+            className="flex h-full w-full items-center justify-center bg-bg-tertiary/60 text-text-secondary font-medium font-sans"
             style={{ fontSize: px * 0.34 }}
           >
             {initials}
@@ -78,14 +92,14 @@ export function Avatar({
       </motion.div>
 
       {isMuted && (
-        <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error">
+        <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
           <svg
-            width="10"
-            height="10"
+            width="9"
+            height="9"
             viewBox="0 0 24 24"
             fill="none"
             stroke="white"
-            strokeWidth="2.5"
+            strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
